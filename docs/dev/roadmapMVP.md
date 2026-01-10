@@ -36,7 +36,7 @@
     - [ ] Реализовать `GlobalFilter` для проверки JWT в заголовке `Authorization`.
     - [ ] Настроить роутинг запросов (`/auth/**` -> User Service, `/users/**` -> User Service).
 
-### 🏁 Definition of Done (DoD)
+### Definition of Done (DoD)
 1. Postman: `POST /auth/register` создает пользователя в БД.
 2. Postman: `POST /auth/login` возвращает JWT.
 3. Postman: `GET /users/me` (с токеном) возвращает профиль.
