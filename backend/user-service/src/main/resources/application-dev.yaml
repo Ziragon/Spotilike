@@ -12,6 +12,12 @@ spring:
       hibernate:
         format_sql: true
 
+application:
+  security:
+    jwt:
+      secret-key: secret-key
+      expiration: 900000
+
 logging:
   level:
     root: INFO

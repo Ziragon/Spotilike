@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getUsername(),
                         user.getPasswordHash(),
-                        new ArrayList<>() // Здесь будут роли/authorities
+                        new ArrayList<>()
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
