@@ -39,7 +39,7 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> courses = new HashSet<>();
+    private Set<Role> roles = new HashSet<>();
 
     @Column(name = "is_verified", nullable = false)
     private boolean isVerified = false;
