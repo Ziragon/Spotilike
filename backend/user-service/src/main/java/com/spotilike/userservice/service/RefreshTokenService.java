@@ -2,6 +2,7 @@ package com.spotilike.userservice.service;
 
 import com.spotilike.userservice.dto.model.RefreshToken;
 import com.spotilike.userservice.dto.model.User;
+import com.spotilike.userservice.exception.TokenExpiredException;
 import com.spotilike.userservice.exception.UserNotFoundException;
 import com.spotilike.userservice.repository.RefreshTokenRepository;
 import com.spotilike.userservice.repository.UserRepository;
@@ -41,7 +42,7 @@ public class RefreshTokenService {
 
     public String createRefreshToken(Long userId, String ipAddress, String deviceInfo) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User with id " + userId + " not found"));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         String clearToken = UUID.randomUUID().toString();
 
@@ -62,7 +63,7 @@ public class RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(token);
-            throw new RuntimeException("Refresh token was expired. Please make a new signin request");
+            throw new TokenExpiredException("Refresh token was expired. Please make a new signin request");
         }
         return token;
     }
