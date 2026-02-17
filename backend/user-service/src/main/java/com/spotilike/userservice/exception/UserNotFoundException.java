@@ -1,14 +1,14 @@
 package com.spotilike.userservice.exception;
 
-import org.springframework.http.HttpStatus;
+import java.util.Map;
 
-public class UserNotFoundException extends BaseException {
+public class UserNotFoundException extends NotFoundException {
 
-    public UserNotFoundException(Long identifier) {
+    public UserNotFoundException(Long userId) {
         super(
-                String.format("User not found with identifier: %s", identifier),
-                "USER_NOT_FOUND",
-                HttpStatus.NOT_FOUND
+                "User not found with id: " + userId,
+                ErrorType.USER_NOT_FOUND,
+                Map.of("userId", userId)
         );
     }
 }

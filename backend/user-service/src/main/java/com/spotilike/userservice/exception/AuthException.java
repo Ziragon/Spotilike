@@ -1,9 +1,14 @@
 package com.spotilike.userservice.exception;
 
-import org.springframework.http.HttpStatus;
+import java.util.Map;
 
 public class AuthException extends BaseException {
-    public AuthException(String message, String errorCode) {
-        super(message, errorCode, HttpStatus.UNAUTHORIZED);
+
+    public AuthException(String message, ErrorType errorType) {
+        super(message, errorType);
+    }
+
+    public AuthException(String message, ErrorType errorType, Map<String, Object> details) {
+        super(message, errorType, details);
     }
 }
