@@ -1,3 +1,5 @@
+# Для данного компоузера не настроен .env файл, все данные берутся прямо из переменных внутри файла компоузера
+
 services:
   # PostgreSQL
   postgres:
@@ -26,6 +28,10 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json
+      - ./docker/pgadmin/.pgpass:/tmp/pgpassfile
     depends_on:
       - postgres
 
