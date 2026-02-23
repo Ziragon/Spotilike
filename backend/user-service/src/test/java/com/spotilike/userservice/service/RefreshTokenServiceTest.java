@@ -43,6 +43,8 @@ class RefreshTokenServiceTest {
 
         testUser = User.builder()
                 .username("db_user")
+                .email("test@mail.com")
+                .passwordHash("123123123")
                 .roles(Set.of())
                 .build();
         userRepository.save(testUser);
@@ -72,6 +74,8 @@ class RefreshTokenServiceTest {
                 .tokenHash("some-hash")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().minusMinutes(1)) // Просрочен
+                .ipAddress("127.0.0.1")
+                .deviceInfo("Device")
                 .build();
         refreshTokenRepository.save(expiredToken);
 

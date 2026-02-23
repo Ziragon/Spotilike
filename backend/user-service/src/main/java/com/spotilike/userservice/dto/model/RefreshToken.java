@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -27,7 +29,8 @@ public class RefreshToken {
     @Column(name = "token_hash", nullable = false)
     private String tokenHash;
 
-    @Column(name = "ip_address", columnDefinition = "inet", nullable = false)
+    @Column(name = "ip_address")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     private String ipAddress;
 
     @Column(name = "device_info", nullable = false)
