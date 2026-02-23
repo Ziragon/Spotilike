@@ -18,7 +18,7 @@
         <module>gateway-service</module>
         <module>user-service</module>
         <module>catalog-service</module>
-        <module>streaming-service</module>
+<!--        <module>streaming-service</module>-->
     </modules>
 
     <properties>
