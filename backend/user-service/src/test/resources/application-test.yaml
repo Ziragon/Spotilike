@@ -8,8 +8,8 @@ application:
 
 spring:
   datasource:
-    url: jdbc:tc:postgresql:16:///test_db
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:postgresql://localhost:5432/test_db
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: create-drop

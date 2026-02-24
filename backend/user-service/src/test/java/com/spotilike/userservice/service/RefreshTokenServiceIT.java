@@ -1,5 +1,6 @@
 package com.spotilike.userservice.service;
 
+import com.spotilike.userservice.BaseIT;
 import com.spotilike.userservice.dto.model.RefreshToken;
 import com.spotilike.userservice.dto.model.User;
 import com.spotilike.userservice.exception.TokenExpiredException;
@@ -24,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class RefreshTokenServiceTest {
+class RefreshTokenServiceIT extends BaseIT {
 
     @Autowired
     private RefreshTokenService refreshTokenService;
@@ -39,13 +40,10 @@ class RefreshTokenServiceTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(refreshTokenService, "refreshExpiration", 600000L); // 10 мин
-
         testUser = User.builder()
                 .username("db_user")
                 .email("test@mail.com")
                 .passwordHash("123123123")
-                .roles(Set.of())
                 .build();
         userRepository.save(testUser);
     }
