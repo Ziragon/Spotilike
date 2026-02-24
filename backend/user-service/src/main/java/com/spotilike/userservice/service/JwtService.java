@@ -20,11 +20,18 @@ import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
-    @Value("${application.security.jwt.secret-key}")
-    private String secretKey;
 
-    @Value("${application.security.jwt.expiration}")
-    private long jwtExpiration;
+    private final String secretKey;
+    private final long jwtExpiration;
+
+    // Spring сам подставит значения из application.yaml сюда
+    public JwtService(
+            @Value("${application.security.jwt.secret-key}") String secretKey,
+            @Value("${application.security.jwt.expiration}") long jwtExpiration
+    ) {
+        this.secretKey = secretKey;
+        this.jwtExpiration = jwtExpiration;
+    }
 
     public String generateToken(User user) {
         Map<String, Object> extraClaims = new HashMap<>();
