@@ -40,6 +40,7 @@ public class RefreshTokenService {
         }
     }
 
+    @Transactional
     public String createRefreshToken(Long userId, String ipAddress, String deviceInfo) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -68,7 +69,7 @@ public class RefreshTokenService {
         return token;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Optional<RefreshToken> findByToken(String clearToken) {
         String hash = hashToken(clearToken);
         return refreshTokenRepository.findByTokenHash(hash);
