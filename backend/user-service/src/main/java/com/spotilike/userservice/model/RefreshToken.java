@@ -1,10 +1,7 @@
 package com.spotilike.userservice.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -12,7 +9,8 @@ import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "tokens")
 @Builder(toBuilder = true)
 @NoArgsConstructor
@@ -22,7 +20,7 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -40,7 +38,7 @@ public class RefreshToken {
     private LocalDateTime expiresAt;
 
     @Column(name = "is_revoked", nullable = false)
-    private boolean isRevoked = false;
+    private boolean revoked = false;
 
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp

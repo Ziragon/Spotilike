@@ -1,10 +1,7 @@
 package com.spotilike.userservice.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,7 +10,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "users")
 @Builder(toBuilder = true)
 @NoArgsConstructor
@@ -35,7 +33,7 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -44,7 +42,7 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
     @Column(name = "is_verified", nullable = false)
-    private boolean isVerified = false;
+    private boolean verified = false;
 
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp
