@@ -3,6 +3,9 @@ spring:
     url: jdbc:postgresql://localhost:5433/user_db
     username: postgres
     password: postgres
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 5000
 
   jpa:
     hibernate:
@@ -11,16 +14,21 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        generate_statistics: true # подсветка N+1 проблемы
 
 application:
   security:
     jwt:
-      secret-key: secret-key
-      expiration: 900000
+      secret-key: "bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE="
+      expiration: 3600000 # 1 час
       refresh-token:
-        expiration: 90000000
+        expiration: 604800000 # 7 дней
 
+# Отладка sql-запросов в hibernate и Security внутри Spring
 logging:
   level:
     root: INFO
     com.spotilike: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.springframework.security: DEBUG
