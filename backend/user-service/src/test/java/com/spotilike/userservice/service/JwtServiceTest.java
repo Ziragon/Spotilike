@@ -29,6 +29,7 @@ class JwtServiceTest {
         User user = User.builder()
                 .id(1L)
                 .username("testUser")
+                .email("test@mail.com")
                 .roles(Set.of(new Role(1L, "ROLE_USER")))
                 .build();
 
@@ -44,7 +45,13 @@ class JwtServiceTest {
     void isTokenValid_ShouldReturnTrue_WhenTokenCorrect() {
         // Given
         String username = "jane_doe";
-        User user = User.builder().username(username).roles(Set.of()).build();
+        User user = User.builder()
+                .id(1L)
+                .username(username)
+                .email("jane@mail.com")
+                .roles(Set.of())
+                .build();
+
         String token = jwtService.generateToken(user);
 
         UserDetails userDetails = mock(UserDetails.class);
@@ -60,7 +67,13 @@ class JwtServiceTest {
     @Test
     void isTokenValid_ShouldReturnFalse_WhenUsernameDoesNotMatch() {
         // Given
-        User user = User.builder().username("correct_user").roles(Set.of()).build();
+        User user = User.builder()
+                .id(1L)
+                .username("correct_user")
+                .email("email@example.com")
+                .roles(Set.of())
+                .build();
+
         String token = jwtService.generateToken(user);
 
         UserDetails wrongUser = mock(UserDetails.class);
