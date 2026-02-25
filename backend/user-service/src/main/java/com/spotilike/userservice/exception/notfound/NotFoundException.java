@@ -11,15 +11,16 @@ public class NotFoundException extends BaseException {
         this(resourceType, identifier, ErrorType.RESOURCE_NOT_FOUND);
     }
 
-    protected NotFoundException(String resourceType, Object identifier, ErrorType errorType) {
+    protected NotFoundException(String resourceType, Object identifier,
+                                ErrorType errorType) {
         super(
-                String.format("%s not found with identifier: %s", resourceType, identifier),
+                String.format("%s not found with identifier: %s",
+                        resourceType, identifier),
                 errorType,
-                Map.of("resourceType", resourceType, "identifier", identifier)
+                Map.of(
+                        "resourceType", resourceType,
+                        "identifier", String.valueOf(identifier)
+                )
         );
-    }
-
-    protected NotFoundException(String message, ErrorType errorType, Map<String, Object> details) {
-        super(message, errorType, details);
     }
 }

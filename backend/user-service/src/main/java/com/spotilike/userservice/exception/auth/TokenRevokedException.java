@@ -1,7 +1,23 @@
 package com.spotilike.userservice.exception.auth;
 
-public class TokenRevokedException extends RuntimeException {
-    public TokenRevokedException(String message) {
-        super(message);
+import com.spotilike.userservice.exception.base.ErrorType;
+
+import java.util.Map;
+
+public class TokenRevokedException extends AuthException {
+
+    public TokenRevokedException() {
+        super(
+                "Refresh token has been revoked",
+                ErrorType.TOKEN_REVOKED
+        );
+    }
+
+    public TokenRevokedException(Long userId) {
+        super(
+                "Refresh token has been revoked",
+                ErrorType.TOKEN_REVOKED,
+                Map.of("userId", userId)
+        );
     }
 }

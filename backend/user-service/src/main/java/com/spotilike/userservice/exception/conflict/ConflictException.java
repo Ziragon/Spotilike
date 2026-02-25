@@ -6,11 +6,21 @@ import com.spotilike.userservice.exception.base.ErrorType;
 import java.util.Map;
 
 public class ConflictException extends BaseException {
-    public ConflictException(String resource, String field, Object value) {
+
+    public ConflictException(String resource, String field,
+                             Object value, ErrorType errorType) {
         super(
-                String.format("%s with %s '%s' already exists", resource, field, value),
-                ErrorType.DUPLICATE_EMAIL,
-                Map.of("resource", resource, "field", field, "value", value)
+                String.format("%s with %s '%s' already exists",
+                        resource, field, value),
+                errorType,
+                Map.of(
+                        "resource", resource,
+                        "field", field
+                )
         );
+    }
+
+    public ConflictException(String resource, String field, Object value) {
+        this(resource, field, value, ErrorType.DUPLICATE_RESOURCE);
     }
 }
