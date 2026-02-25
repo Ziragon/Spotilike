@@ -61,7 +61,7 @@ public class RefreshTokenService {
                 });
 
         int revoked = refreshTokenRepository
-                .revokeByUser_IdAndDeviceInfo(userId, deviceInfo);
+                .revokeByUserIdAndDeviceInfo(userId, deviceInfo);
 
         if (revoked > 0) {
             log.info("Revoked {} old token(s) for user {} on device {}",
