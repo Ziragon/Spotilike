@@ -3,6 +3,7 @@ package com.spotilike.userservice.service;
 import com.spotilike.userservice.model.Role;
 import com.spotilike.userservice.model.User;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -24,6 +25,7 @@ class JwtServiceTest {
     }
 
     @Test
+    @DisplayName("Должен сгенерировать валидный токен")
     void shouldGenerateValidToken() {
         // Given
         User user = User.builder()
@@ -42,6 +44,7 @@ class JwtServiceTest {
     }
 
     @Test
+    @DisplayName("Должен вернуть true по корректному токену")
     void isTokenValid_ShouldReturnTrue_WhenTokenCorrect() {
         // Given
         String username = "jane_doe";
@@ -65,6 +68,7 @@ class JwtServiceTest {
     }
 
     @Test
+    @DisplayName("Должен вернуть false для подделанного username")
     void isTokenValid_ShouldReturnFalse_WhenUsernameDoesNotMatch() {
         // Given
         User user = User.builder()
@@ -84,5 +88,46 @@ class JwtServiceTest {
 
         // Then
         assertThat(isValid).isFalse();
+    }
+
+    @Test
+    @DisplayName("Должен вернуть false для подделанного токена")
+    void shouldReturnFalseForTamperedToken() {
+        // Given
+        User user = User.builder()
+                .id(1L).username("user").roles(Set.of()).build();
+        String token = jwtService.generateToken(user);
+
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn("user");
+
+        // When — подделываем токен
+        String tampered = token.substring(0, token.length() - 5) + "XXXXX";
+
+        // Then
+        assertThat(jwtService.isTokenValid(tampered, userDetails)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Должен вернуть false для пустого токена")
+    void shouldReturnFalseForEmptyToken() {
+        UserDetails userDetails = mock(UserDetails.class);
+        assertThat(jwtService.isTokenValid("", userDetails)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Должен извлечь userId из claims")
+    void shouldExtractUserIdFromClaims() {
+        // Given
+        User user = User.builder()
+                .id(42L).username("user").roles(Set.of()).build();
+        String token = jwtService.generateToken(user);
+
+        // When
+        Long userId = jwtService.extractClaim(token,
+                claims -> claims.get("userId", Long.class));
+
+        // Then
+        assertThat(userId).isEqualTo(42L);
     }
 }

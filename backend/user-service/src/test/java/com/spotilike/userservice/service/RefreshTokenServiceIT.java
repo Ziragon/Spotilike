@@ -1,6 +1,8 @@
 package com.spotilike.userservice.service;
 
 import com.spotilike.userservice.BaseIT;
+import com.spotilike.userservice.exception.auth.TokenRevokedException;
+import com.spotilike.userservice.exception.notfound.TokenNotFoundException;
 import com.spotilike.userservice.model.RefreshToken;
 import com.spotilike.userservice.model.User;
 import com.spotilike.userservice.exception.auth.TokenExpiredException;
@@ -96,5 +98,52 @@ class RefreshTokenServiceIT extends BaseIT {
         // Then
         RefreshToken revokedToken = refreshTokenService.findByToken(clearToken).get();
         assertThat(revokedToken.isRevoked()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Должен отозвать все токены при использовании отозванного")
+    void shouldRevokeAllTokensWhenRevokedTokenUsed() {
+        // Given
+        String token1 = refreshTokenService
+                .createRefreshToken(testUser.getId(), "127.0.0.1", "Device-1");
+        String token2 = refreshTokenService
+                .createRefreshToken(testUser.getId(), "127.0.0.1", "Device-2");
+
+        refreshTokenService.revokeToken(token1);
+
+        // When
+        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(token1))
+                .isInstanceOf(TokenRevokedException.class);
+
+        // Then
+        RefreshToken secondToken = refreshTokenService.findByToken(token2).get();
+        assertThat(secondToken.isRevoked()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Должен выбросить TokenNotFoundException для несуществующего токена")
+    void shouldThrowWhenTokenNotFound() {
+        assertThatThrownBy(() ->
+                refreshTokenService.validateRefreshToken("non-existent-token"))
+                .isInstanceOf(TokenNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Должен отозвать старый токен при создании нового для того же устройства")
+    void shouldRevokeOldTokenOnSameDevice() {
+        // Given
+        String oldToken = refreshTokenService
+                .createRefreshToken(testUser.getId(), "127.0.0.1", "Same-Device");
+
+        // When
+        String newToken = refreshTokenService
+                .createRefreshToken(testUser.getId(), "127.0.0.1", "Same-Device");
+
+        // Then
+        RefreshToken old = refreshTokenService.findByToken(oldToken).get();
+        assertThat(old.isRevoked()).isTrue();
+
+        RefreshToken fresh = refreshTokenService.findByToken(newToken).get();
+        assertThat(fresh.isRevoked()).isFalse();
     }
 }
