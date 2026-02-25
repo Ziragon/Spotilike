@@ -12,13 +12,13 @@ import java.util.Optional;
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE RefreshToken t SET t.revoked = true " +
             "WHERE t.user.id = :userId AND t.deviceInfo = :deviceInfo AND t.revoked = false")
     int revokeByUserIdAndDeviceInfo(@Param("userId") Long userId,
                                     @Param("deviceInfo") String deviceInfo);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE RefreshToken t SET t.revoked = true "
             + "WHERE t.user.id = :userId AND t.revoked = false")
     int revokeAllByUserId(@Param("userId") Long userId);
