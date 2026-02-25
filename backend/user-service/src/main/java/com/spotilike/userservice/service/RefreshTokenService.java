@@ -1,5 +1,6 @@
 package com.spotilike.userservice.service;
 
+import com.spotilike.userservice.exception.auth.TokenRevokedException;
 import com.spotilike.userservice.exception.notfound.TokenNotFoundException;
 import com.spotilike.userservice.model.RefreshToken;
 import com.spotilike.userservice.model.User;
@@ -8,6 +9,7 @@ import com.spotilike.userservice.exception.notfound.UserNotFoundException;
 import com.spotilike.userservice.repository.RefreshTokenRepository;
 import com.spotilike.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,11 +20,13 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
@@ -37,7 +41,7 @@ public class RefreshTokenService {
             byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing token", e);
+            throw new AssertionError("SHA-256 algorithm must be available in every JVM", e);
         }
     }
 
@@ -45,6 +49,8 @@ public class RefreshTokenService {
     public String createRefreshToken(Long userId, String ipAddress, String deviceInfo) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
+
+        refreshTokenRepository.revokeByUser_IdAndDeviceInfo(userId, deviceInfo);
 
         String clearToken = UUID.randomUUID().toString();
 
@@ -65,17 +71,17 @@ public class RefreshTokenService {
     @Transactional
     public RefreshToken validateRefreshToken(String clearToken) {
         RefreshToken token = findByToken(clearToken)
-                .orElseThrow(() -> new TokenNotFoundException(clearToken));
+                .orElseThrow(TokenNotFoundException::new);
 
         if (token.isRevoked()) {
             revokeAllUserTokens(token.getUser().getId());
-            throw new TokenRevokedException("Refresh token has been revoked");
+            throw new TokenRevokedException();
         }
 
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             token.setRevoked(true);
             refreshTokenRepository.save(token);
-            throw new TokenExpiredException(clearToken);
+            throw new TokenExpiredException("refresh");
         }
 
         return token;
@@ -93,5 +99,11 @@ public class RefreshTokenService {
             token.setRevoked(true);
             refreshTokenRepository.save(token);
         });
+    }
+
+    @Transactional
+    public void revokeAllUserTokens(Long userId) {
+        int count = refreshTokenRepository.revokeAllByUserId(userId);
+        log.info("Revoked {} tokens for user {}", count, userId);
     }
 }

@@ -76,7 +76,7 @@ class RefreshTokenServiceIT extends BaseIT {
         refreshTokenRepository.save(expiredToken);
 
         // When & Then
-        assertThatThrownBy(() -> refreshTokenService.verifyExpiration(expiredToken))
+        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(expiredToken.getTokenHash()))
                 .isInstanceOf(TokenExpiredException.class);
 
         // проверка на удаление из бд

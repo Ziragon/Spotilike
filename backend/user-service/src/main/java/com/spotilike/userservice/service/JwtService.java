@@ -3,9 +3,11 @@ package com.spotilike.userservice.service;
 import com.spotilike.userservice.model.Role;
 import com.spotilike.userservice.model.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -19,47 +21,39 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class JwtService {
 
-    private final String secretKey;
+    private final SecretKey signingKey;
     private final long jwtExpiration;
 
-    // Spring сам подставит значения из application.yaml сюда
     public JwtService(
             @Value("${application.security.jwt.secret-key}") String secretKey,
             @Value("${application.security.jwt.expiration}") long jwtExpiration
     ) {
-        this.secretKey = secretKey;
+        this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
         this.jwtExpiration = jwtExpiration;
     }
 
     public String generateToken(User user) {
-        Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("userId", user.getId());
-        extraClaims.put("roles", user.getRoles().stream()
-                .map(Role::getName)
-                .collect(Collectors.toList()));
+        Map<String, Object> extraClaims = Map.of(
+                "userId", user.getId(),
+                "roles", user.getRoles().stream()
+                        .map(Role::getName)
+                        .toList()
+        );
 
-        return buildToken(extraClaims, user.getUsername(), jwtExpiration);
+        return buildToken(extraClaims, user.getUsername());
     }
 
-    public String generateRefreshToken() {
-        return UUID.randomUUID().toString();
-    }
-
-    private String buildToken(Map<String, Object> extraClaims, String subject, long expiration) {
+    private String buildToken(Map<String, Object> extraClaims, String subject) {
         return Jwts.builder()
                 .claims(extraClaims)
                 .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey())
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(signingKey)
                 .compact();
-    }
-
-    private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String extractUsername(String token) {
@@ -72,8 +66,13 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        try {
+            final String username = extractUsername(token);
+            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("Invalid JWT token: {}", e.getMessage());
+            return false;
+        }
     }
 
     private boolean isTokenExpired(String token) {
@@ -82,7 +81,7 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSignInKey())
+                .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
