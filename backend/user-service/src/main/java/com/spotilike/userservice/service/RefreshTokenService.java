@@ -1,7 +1,7 @@
 package com.spotilike.userservice.service;
 
-import com.spotilike.userservice.dto.model.RefreshToken;
-import com.spotilike.userservice.dto.model.User;
+import com.spotilike.userservice.model.RefreshToken;
+import com.spotilike.userservice.model.User;
 import com.spotilike.userservice.exception.TokenExpiredException;
 import com.spotilike.userservice.exception.UserNotFoundException;
 import com.spotilike.userservice.repository.RefreshTokenRepository;

@@ -1,6 +1,6 @@
 package com.spotilike.userservice.service;
 
-import com.spotilike.userservice.dto.model.User;
+import com.spotilike.userservice.model.User;
 import com.spotilike.userservice.repository.RoleRepository;
 import com.spotilike.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

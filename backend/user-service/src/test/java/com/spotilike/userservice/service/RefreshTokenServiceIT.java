@@ -1,8 +1,8 @@
 package com.spotilike.userservice.service;
 
 import com.spotilike.userservice.BaseIT;
-import com.spotilike.userservice.dto.model.RefreshToken;
-import com.spotilike.userservice.dto.model.User;
+import com.spotilike.userservice.model.RefreshToken;
+import com.spotilike.userservice.model.User;
 import com.spotilike.userservice.exception.TokenExpiredException;
 import com.spotilike.userservice.repository.RefreshTokenRepository;
 import com.spotilike.userservice.repository.UserRepository;
@@ -12,12 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

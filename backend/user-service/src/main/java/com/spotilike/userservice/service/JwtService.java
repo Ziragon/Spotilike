@@ -1,7 +1,7 @@
 package com.spotilike.userservice.service;
 
-import com.spotilike.userservice.dto.model.Role;
-import com.spotilike.userservice.dto.model.User;
+import com.spotilike.userservice.model.Role;
+import com.spotilike.userservice.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;

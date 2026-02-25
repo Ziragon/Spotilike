@@ -1,4 +1,4 @@
-package com.spotilike.userservice.dto.model;
+package com.spotilike.userservice.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

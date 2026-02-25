@@ -1,11 +1,10 @@
 package com.spotilike.userservice.service;
 
-import com.spotilike.userservice.dto.model.Role;
-import com.spotilike.userservice.dto.model.User;
+import com.spotilike.userservice.model.Role;
+import com.spotilike.userservice.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Set;
 

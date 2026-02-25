@@ -1,6 +1,6 @@
 package com.spotilike.userservice.repository;
 
-import com.spotilike.userservice.dto.model.User;
+import com.spotilike.userservice.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
