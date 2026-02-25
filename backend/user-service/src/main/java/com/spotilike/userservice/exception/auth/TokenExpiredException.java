@@ -1,4 +1,6 @@
-package com.spotilike.userservice.exception;
+package com.spotilike.userservice.exception.auth;
+
+import com.spotilike.userservice.exception.base.ErrorType;
 
 import java.util.Map;
 

@@ -1,9 +1,10 @@
 package com.spotilike.userservice.service;
 
+import com.spotilike.userservice.exception.notfound.TokenNotFoundException;
 import com.spotilike.userservice.model.RefreshToken;
 import com.spotilike.userservice.model.User;
-import com.spotilike.userservice.exception.TokenExpiredException;
-import com.spotilike.userservice.exception.UserNotFoundException;
+import com.spotilike.userservice.exception.auth.TokenExpiredException;
+import com.spotilike.userservice.exception.notfound.UserNotFoundException;
 import com.spotilike.userservice.repository.RefreshTokenRepository;
 import com.spotilike.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class RefreshTokenService {
                 .ipAddress(ipAddress)
                 .deviceInfo(deviceInfo)
                 .expiresAt(LocalDateTime.now().plus(refreshExpiration, ChronoUnit.MILLIS))
-                .isRevoked(false)
+                .revoked(false)
                 .build();
 
         refreshTokenRepository.save(refreshToken);
@@ -61,11 +62,22 @@ public class RefreshTokenService {
         return clearToken;
     }
 
-    public RefreshToken verifyExpiration(RefreshToken token) {
-        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
-            refreshTokenRepository.delete(token);
-            throw new TokenExpiredException("Refresh token was expired. Please make a new signin request");
+    @Transactional
+    public RefreshToken validateRefreshToken(String clearToken) {
+        RefreshToken token = findByToken(clearToken)
+                .orElseThrow(() -> new TokenNotFoundException(clearToken));
+
+        if (token.isRevoked()) {
+            revokeAllUserTokens(token.getUser().getId());
+            throw new TokenRevokedException("Refresh token has been revoked");
         }
+
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+            token.setRevoked(true);
+            refreshTokenRepository.save(token);
+            throw new TokenExpiredException(clearToken);
+        }
+
         return token;
     }
 

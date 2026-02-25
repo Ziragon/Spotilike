@@ -3,7 +3,7 @@ package com.spotilike.userservice.service;
 import com.spotilike.userservice.BaseIT;
 import com.spotilike.userservice.model.RefreshToken;
 import com.spotilike.userservice.model.User;
-import com.spotilike.userservice.exception.TokenExpiredException;
+import com.spotilike.userservice.exception.auth.TokenExpiredException;
 import com.spotilike.userservice.repository.RefreshTokenRepository;
 import com.spotilike.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;

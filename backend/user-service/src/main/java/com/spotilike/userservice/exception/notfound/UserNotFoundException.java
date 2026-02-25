@@ -1,4 +1,6 @@
-package com.spotilike.userservice.exception;
+package com.spotilike.userservice.exception.notfound;
+
+import com.spotilike.userservice.exception.base.ErrorType;
 
 public class UserNotFoundException extends NotFoundException {
 
