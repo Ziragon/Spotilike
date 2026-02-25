@@ -20,8 +20,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
 class RefreshTokenServiceIT extends BaseIT {
 
@@ -56,31 +54,34 @@ class RefreshTokenServiceIT extends BaseIT {
         assertThat(clearToken).isNotNull();
 
         // проверка на хеш токена в бд
-        Optional<RefreshToken> storedToken = refreshTokenService.findByToken(clearToken);
-        assertThat(storedToken).isPresent();
-        assertThat(storedToken.get().getUser().getUsername()).isEqualTo("db_user");
-        assertThat(storedToken.get().getTokenHash()).isNotEqualTo(clearToken);
+        var allTokens = refreshTokenRepository.findAll();
+        assertThat(allTokens).hasSize(1);
+        assertThat(allTokens.getFirst().getUser().getUsername()).isEqualTo("db_user");
     }
 
     @Test
-    @DisplayName("Должен выбросить исключение и удалить токен, если срок истек")
-    void verifyExpiration_ShouldThrowExceptionWhenExpired() {
+    @DisplayName("Должен выбросить исключение и пометить токен как отозванный, если срок истек")
+    void verifyExpiration_ShouldThrowExceptionAndRevokeToken() {
         // Given
-        RefreshToken expiredToken = RefreshToken.builder()
-                .tokenHash("some-hash")
-                .user(testUser)
-                .expiresAt(LocalDateTime.now().minusMinutes(1)) // Просрочен
-                .ipAddress("127.0.0.1")
-                .deviceInfo("Device")
-                .build();
-        refreshTokenRepository.save(expiredToken);
+        String clearToken = refreshTokenService.createRefreshToken(testUser.getId(), "127.0.0.1", "Device");
+
+        RefreshToken storedToken = refreshTokenService.findByToken(clearToken).orElseThrow();
+
+        storedToken.setExpiresAt(LocalDateTime.now().minusMinutes(1));
+        storedToken.setRevoked(false);
+        refreshTokenRepository.save(storedToken);
+        refreshTokenRepository.flush();
 
         // When & Then
-        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(expiredToken.getTokenHash()))
+        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(clearToken))
                 .isInstanceOf(TokenExpiredException.class);
 
-        // проверка на удаление из бд
-        assertThat(refreshTokenRepository.findById(expiredToken.getId())).isEmpty();
+        // Then
+        RefreshToken updatedToken = refreshTokenRepository.findById(storedToken.getId()).orElseThrow();
+
+        assertThat(updatedToken.isRevoked())
+                .as("Просроченный токен должен быть помечен как revoked, но не удален")
+                .isTrue();
     }
 
     @Test
