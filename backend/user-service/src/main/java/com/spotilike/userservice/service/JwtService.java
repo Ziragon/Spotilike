@@ -46,7 +46,7 @@ public class JwtService {
                         .toList()
         );
 
-        String token = buildToken(extraClaims, user.getUsername());
+        String token = buildToken(extraClaims, user.getEmail());
 
         log.debug("JWT generated for user {} with roles {}",
                 user.getId(), extraClaims.get("roles"));
