@@ -7,14 +7,15 @@ import java.util.Map;
 public class InvalidCredentialsException extends AuthException {
 
     public InvalidCredentialsException() {
-        super("Invalid email or password", ErrorType.INVALID_CREDENTIALS);
+        super("Invalid email or password",
+                ErrorType.INVALID_CREDENTIALS);
     }
 
-    public InvalidCredentialsException(String field) {
+    public InvalidCredentialsException(String context) {
         super(
-                "Invalid credentials",
+                "Invalid credentials: " + context,
                 ErrorType.INVALID_CREDENTIALS,
-                Map.of("hint", field)
+                Map.of("context", context)
         );
     }
 }
