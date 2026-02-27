@@ -12,8 +12,6 @@ spring:
       leak-detection-threshold: 30000 # 30 сек
 
   jpa:
-    hibernate:
-      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
