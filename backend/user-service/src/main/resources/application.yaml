@@ -7,7 +7,10 @@ spring:
 
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    locations:
+      - "classpath:db/migration"
+    baseline-on-migrate: true
+    default-schema: public
 
   jpa:
     hibernate:
@@ -23,11 +26,10 @@ spring:
         order_updates: true
 
   jackson:
-    default-property-inclusion: non_null # Удаление нулл полей
-    serialization:
-      write-dates-as-timestamps: false # Преобразование даты
+    date-format: "yyyy-MM-dd'T'HH:mm:ss.SSSZ" # Преобразование даты
     deserialization:
       fail-on-unknown-properties: false # Пропуск неизвестных значений от фронта
+    default-property-inclusion: non_null # Удаление нулл полей
 
 server:
   port: ${SERVER_PORT:8081}

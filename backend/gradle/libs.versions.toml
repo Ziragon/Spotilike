@@ -22,6 +22,7 @@ boot-starter = { module = "org.springframework.boot:spring-boot-starter", versio
 boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springBoot" }
 boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "springBoot" }
 boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springBoot" }
+boot-starter-flyway = { group = "org.springframework.boot", name = "spring-boot-starter-flyway" }
 boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
 
 # Validation & Docs
@@ -51,7 +52,7 @@ spring-dependency-management = { id = "io.spring.dependency-management", version
 
 [bundles]
 # Groupes
-database = ["boot-starter-data-jpa", "postgresql", "flyway-core", "flyway-postgres"]
+database = ["boot-starter-data-jpa", "postgresql", "flyway-core", "flyway-postgres", boot-starter-flyway  ]
 security = ["boot-starter-security", "jjwt-api", "jjwt-impl", "jjwt-jackson"]
 web = ["boot-starter-web", "jakarta-validation", "springdoc-ui"]
 test-infrastructure = ["testcontainers-postgresql", "testcontainers-junit"]
