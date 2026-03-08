@@ -1,0 +1,41 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+          routes:
+            - id: user-service
+              uri: ${IDENTITY_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/auth/**,/api/v1/users/**
+              filters:
+                - StripPrefix=0
+
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins: "*"
+                allowed-methods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowed-headers: "*"
+                allow-credentials: false
+
+application:
+  security:
+    jwt:
+      secret-key: "bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE="
+      expiration: 3600000 # 1 час
+      refresh-token:
+        expiration: 604800000 # 7 дней
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.spotilike.gateway: DEBUG
