@@ -52,7 +52,7 @@ spring-dependency-management = { id = "io.spring.dependency-management", version
 
 [bundles]
 # Groupes
-database = ["boot-starter-data-jpa", "postgresql", "flyway-core", "flyway-postgres", boot-starter-flyway  ]
+database = ["boot-starter-data-jpa", "postgresql", "flyway-core", "flyway-postgres", "boot-starter-flyway"]
 security = ["boot-starter-security", "jjwt-api", "jjwt-impl", "jjwt-jackson"]
 web = ["boot-starter-web", "jakarta-validation", "springdoc-ui"]
 test-infrastructure = ["testcontainers-postgresql", "testcontainers-junit"]
