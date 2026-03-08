@@ -1,16 +1,16 @@
 [versions]
 # Core
-springBoot = "3.5.9"
+springBoot = "4.0.3"
 dependencyManagement = "1.1.7"
-jakartaValidation = "3.0.2"
-springDoc = "2.8.8"
+jakartaValidation = "3.1.1"
+springDoc = "3.0.2"
 
 # Database
-postgresql = "42.7.8"
-flyway = "11.7.2"
+postgresql = "42.7.10"
+flyway = "12.0.3"
 
 # Security & JWT
-jjwt = "0.12.5"
+jjwt = "0.12.6"
 lombok = "1.18.42"
 
 # Testing

@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.spring.boot)
-    alias(libs.plugins.spring.dependency.management)
 }
 
 dependencies {
@@ -8,12 +7,13 @@ dependencies {
     annotationProcessor(libs.lombok)
 
     implementation(libs.boot.starter)
-    implementation(libs.bundles.web)               // boot-starter-web + jakarta-validation + springdoc
-    implementation(libs.bundles.database)          // boot-starter-data-jpa + postgresql + flyway-core + flyway-postgres
-    implementation(libs.bundles.security)          // boot-starter-security + jjwt-api + jjwt-impl + jjwt-jackson
+
+    implementation(libs.bundles.web)
+    implementation(libs.bundles.database)
+    implementation(libs.bundles.security)
 
     testImplementation(libs.boot.starter.test)
-    testImplementation(libs.bundles.test.infrastructure)  // testcontainers-postgresql + testcontainers-junit
+    testImplementation(libs.bundles.test.infrastructure)
 }
 
 description = "user-service"
