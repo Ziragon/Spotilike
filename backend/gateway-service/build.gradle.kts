@@ -1,11 +1,23 @@
 plugins {
     alias(libs.plugins.spring.boot)
-    alias(libs.plugins.spring.dependency.management)
+}
+
+dependencyManagement {
+    imports {
+        mavenBom(libs.cloud.dependencies.get().toString())
+    }
 }
 
 dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+
+    implementation(libs.jackson.core)
+    implementation(libs.cloud.starter.gateway)
+
+    implementation(libs.jjwt.api)
+    runtimeOnly(libs.jjwt.impl)
+    runtimeOnly(libs.jjwt.jackson)
 
     implementation(libs.boot.starter)
 

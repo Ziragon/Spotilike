@@ -4,6 +4,9 @@ springBoot              = "4.0.3"
 dependencyManagement    = "1.1.7"
 jakartaValidation       = "3.1.1"
 springDoc               = "3.0.2"
+springCloud             = "2025.1.1"
+springCloudStarter      = "5.0.1"
+jacksonCore             = "3.1.0"
 
 # Database
 postgresql              = "42.7.10"
@@ -25,6 +28,10 @@ boot-starter-security           = { module = "org.springframework.boot:spring-bo
 boot-starter-flyway             = { module = "org.springframework.boot:spring-boot-starter-flyway", version.ref = "springBoot" }
 boot-starter-test               = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
 
+# Spring Cloud Gateway
+cloud-dependencies              = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "springCloud" }
+cloud-starter-gateway           = { module = "org.springframework.cloud:spring-cloud-starter-gateway-server-webflux", version.ref = "springCloudStarter" }
+
 # Validation & Docs
 jakarta-validation              = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakartaValidation" }
 springdoc-ui                    = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springDoc" }
@@ -41,6 +48,7 @@ jjwt-jackson                    = { module = "io.jsonwebtoken:jjwt-jackson", ver
 
 # Utils
 lombok                          = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+jackson-core                    = { module = "tools.jackson.core:jackson-core", version.ref = "jacksonCore" }
 
 # Testcontainers
 testcontainers-postgresql       = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
