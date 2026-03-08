@@ -1,31 +1,57 @@
 [versions]
-io-jsonwebtoken-jjwt-api = "0.12.5"
-io-jsonwebtoken-jjwt-impl = "0.12.5"
-io-jsonwebtoken-jjwt-jackson = "0.12.5"
-jakarta-validation-jakarta-validation-api = "3.0.2"
-org-flywaydb-flyway-core = "11.7.2"
-org-flywaydb-flyway-database-postgresql = "11.7.2"
-org-postgresql-postgresql = "42.7.8"
-org-springdoc-springdoc-openapi-starter-webmvc-ui = "2.8.8"
-org-springframework-boot-spring-boot-starter = "3.5.9"
-org-springframework-boot-spring-boot-starter-data-jpa = "3.5.9"
-org-springframework-boot-spring-boot-starter-security = "3.5.9"
-org-springframework-boot-spring-boot-starter-web = "3.5.9"
-org-testcontainers-junit-jupiter = "1.21.4"
-org-testcontainers-postgresql = "1.21.4"
+# Core
+springBoot = "3.5.9"
+dependencyManagement = "1.1.7"
+jakartaValidation = "3.0.2"
+springDoc = "2.8.8"
+
+# Database
+postgresql = "42.7.8"
+flyway = "11.7.2"
+
+# Security & JWT
+jjwt = "0.12.5"
+lombok = "1.18.42"
+
+# Testing
+testcontainers = "1.21.4"
 
 [libraries]
-io-jsonwebtoken-jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "io-jsonwebtoken-jjwt-api" }
-io-jsonwebtoken-jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "io-jsonwebtoken-jjwt-impl" }
-io-jsonwebtoken-jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "io-jsonwebtoken-jjwt-jackson" }
-jakarta-validation-jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation-jakarta-validation-api" }
-org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "org-flywaydb-flyway-core" }
-org-flywaydb-flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "org-flywaydb-flyway-database-postgresql" }
-org-postgresql-postgresql = { module = "org.postgresql:postgresql", version.ref = "org-postgresql-postgresql" }
-org-springdoc-springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "org-springdoc-springdoc-openapi-starter-webmvc-ui" }
-org-springframework-boot-spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "org-springframework-boot-spring-boot-starter" }
-org-springframework-boot-spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "org-springframework-boot-spring-boot-starter-data-jpa" }
-org-springframework-boot-spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "org-springframework-boot-spring-boot-starter-security" }
-org-springframework-boot-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "org-springframework-boot-spring-boot-starter-web" }
-org-testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "org-testcontainers-junit-jupiter" }
-org-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "org-testcontainers-postgresql" }
+# Spring Boot
+boot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springBoot" }
+boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springBoot" }
+boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "springBoot" }
+boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springBoot" }
+boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
+
+# Validation & Docs
+jakarta-validation = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakartaValidation" }
+springdoc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springDoc" }
+
+# Database
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+
+# JWT
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
+
+# Utils
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+
+# Testcontainers
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "dependencyManagement" }
+
+[bundles]
+# Groupes
+database = ["boot-starter-data-jpa", "postgresql", "flyway-core", "flyway-postgres"]
+security = ["boot-starter-security", "jjwt-api", "jjwt-impl", "jjwt-jackson"]
+web = ["boot-starter-web", "jakarta-validation", "springdoc-ui"]
+test-infrastructure = ["testcontainers-postgresql", "testcontainers-junit"]

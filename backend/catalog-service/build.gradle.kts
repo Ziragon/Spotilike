@@ -1,12 +1,17 @@
 plugins {
-    id("buildlogic.java-conventions")
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 dependencies {
-    api(libs.org.springframework.boot.spring.boot.starter)
-    api(libs.org.springframework.boot.spring.boot.starter.data.jpa)
-    api(libs.org.postgresql.postgresql)
-    api(libs.org.springframework.boot.spring.boot.starter.security)
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+
+    implementation(libs.boot.starter)
+    implementation(libs.bundles.database)
+    implementation(libs.bundles.security)
+
+    testImplementation(libs.boot.starter.test)
 }
 
 description = "catalog-service"

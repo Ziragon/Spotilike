@@ -1,22 +1,19 @@
 plugins {
-    id("buildlogic.java-conventions")
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 dependencies {
-    api(libs.org.springframework.boot.spring.boot.starter)
-    api(libs.org.springframework.boot.spring.boot.starter.data.jpa)
-    api(libs.org.postgresql.postgresql)
-    api(libs.org.springframework.boot.spring.boot.starter.security)
-    api(libs.io.jsonwebtoken.jjwt.api)
-    api(libs.org.springframework.boot.spring.boot.starter.web)
-    api(libs.jakarta.validation.jakarta.validation.api)
-    api(libs.org.springdoc.springdoc.openapi.starter.webmvc.ui)
-    api(libs.org.flywaydb.flyway.core)
-    api(libs.org.flywaydb.flyway.database.postgresql)
-    runtimeOnly(libs.io.jsonwebtoken.jjwt.impl)
-    runtimeOnly(libs.io.jsonwebtoken.jjwt.jackson)
-    testImplementation(libs.org.testcontainers.postgresql)
-    testImplementation(libs.org.testcontainers.junit.jupiter)
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+
+    implementation(libs.boot.starter)
+    implementation(libs.bundles.web)               // boot-starter-web + jakarta-validation + springdoc
+    implementation(libs.bundles.database)          // boot-starter-data-jpa + postgresql + flyway-core + flyway-postgres
+    implementation(libs.bundles.security)          // boot-starter-security + jjwt-api + jjwt-impl + jjwt-jackson
+
+    testImplementation(libs.boot.starter.test)
+    testImplementation(libs.bundles.test.infrastructure)  // testcontainers-postgresql + testcontainers-junit
 }
 
 description = "user-service"

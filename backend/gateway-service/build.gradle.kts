@@ -1,9 +1,15 @@
 plugins {
-    id("buildlogic.java-conventions")
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 dependencies {
-    api(libs.org.springframework.boot.spring.boot.starter)
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+
+    implementation(libs.boot.starter)
+
+    testImplementation(libs.boot.starter.test)
 }
 
 description = "gateway-service"
