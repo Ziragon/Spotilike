@@ -1,0 +1,31 @@
+[versions]
+io-jsonwebtoken-jjwt-api = "0.12.5"
+io-jsonwebtoken-jjwt-impl = "0.12.5"
+io-jsonwebtoken-jjwt-jackson = "0.12.5"
+jakarta-validation-jakarta-validation-api = "3.0.2"
+org-flywaydb-flyway-core = "11.7.2"
+org-flywaydb-flyway-database-postgresql = "11.7.2"
+org-postgresql-postgresql = "42.7.8"
+org-springdoc-springdoc-openapi-starter-webmvc-ui = "2.8.8"
+org-springframework-boot-spring-boot-starter = "3.5.9"
+org-springframework-boot-spring-boot-starter-data-jpa = "3.5.9"
+org-springframework-boot-spring-boot-starter-security = "3.5.9"
+org-springframework-boot-spring-boot-starter-web = "3.5.9"
+org-testcontainers-junit-jupiter = "1.21.4"
+org-testcontainers-postgresql = "1.21.4"
+
+[libraries]
+io-jsonwebtoken-jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "io-jsonwebtoken-jjwt-api" }
+io-jsonwebtoken-jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "io-jsonwebtoken-jjwt-impl" }
+io-jsonwebtoken-jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "io-jsonwebtoken-jjwt-jackson" }
+jakarta-validation-jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation-jakarta-validation-api" }
+org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "org-flywaydb-flyway-core" }
+org-flywaydb-flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "org-flywaydb-flyway-database-postgresql" }
+org-postgresql-postgresql = { module = "org.postgresql:postgresql", version.ref = "org-postgresql-postgresql" }
+org-springdoc-springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "org-springdoc-springdoc-openapi-starter-webmvc-ui" }
+org-springframework-boot-spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "org-springframework-boot-spring-boot-starter" }
+org-springframework-boot-spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "org-springframework-boot-spring-boot-starter-data-jpa" }
+org-springframework-boot-spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "org-springframework-boot-spring-boot-starter-security" }
+org-springframework-boot-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "org-springframework-boot-spring-boot-starter-web" }
+org-testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "org-testcontainers-junit-jupiter" }
+org-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "org-testcontainers-postgresql" }

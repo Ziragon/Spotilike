@@ -32,7 +32,7 @@ __pycache__/
 env/
 venv/
 ENV/
-build/
+**/build/
 dist/
 *.egg-info/
 
@@ -59,3 +59,7 @@ Thumbs.db
 # Pgadmin secrets
 /docker/pgadmin/servers.json
 /docker/pgadmin/.pgpass
+
+# Gradle files
+**/.gradle/
+**/.kotlin/
