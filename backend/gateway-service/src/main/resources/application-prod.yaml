@@ -1,0 +1,22 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: user-service
+              uri: ${IDENTITY_SERVICE_URL}
+              predicates:
+                - Path=/api/v1/auth/**,/api/v1/users/**
+              filters:
+                - StripPrefix=0
+
+gateway:
+  cors-allowed-origins:
+    - "https://spotilike.com"
+    - "https://www.spotilike.com"
+  cors-allow-credentials: true
+
+logging:
+  level:
+    root: WARN

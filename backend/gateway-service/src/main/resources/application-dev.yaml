@@ -14,18 +14,10 @@ spring:
               filters:
                 - StripPrefix=0
 
-          globalcors:
-            cors-configurations:
-              '[/**]':
-                allowed-origins: "*"
-                allowed-methods:
-                  - GET
-                  - POST
-                  - PUT
-                  - DELETE
-                  - OPTIONS
-                allowed-headers: "*"
-                allow-credentials: false
+gateway:
+  cors-allowed-origins:
+    - "*"
+  cors-allow-credentials: false
 
 application:
   security:
