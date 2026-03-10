@@ -29,10 +29,10 @@ springdoc:
     path: /swagger-ui.html
     urls:
       - name: User Service
-        url: /api/v1/auth/v3/api-docs
+        url: /v3/api-docs/user-service
   api-docs:
     enabled: true
-    path: /v3/api-docs
+    path: /api-docs
 
 logging:
   level:
