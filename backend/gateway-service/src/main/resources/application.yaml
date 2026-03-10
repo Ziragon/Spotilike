@@ -18,9 +18,6 @@ application:
   security:
     jwt:
       secret-key: ${JWT_SECRET_KEY:must-be-overridden}
-      expiration: 900000 # 15 ?????
-      refresh-token:
-        expiration: 604800000 # 7 ????
 
 logging:
   level:
