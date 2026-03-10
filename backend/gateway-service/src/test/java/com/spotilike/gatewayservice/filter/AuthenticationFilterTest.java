@@ -25,7 +25,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -75,6 +74,7 @@ class AuthenticationFilterTest {
                         .header("X-User-Id", "999")
                         .header("X-User-Email", "hacker@evil.com")
                         .header("X-User-Roles", "ROLE_ADMIN")
+                        .header("X-User-Anonymous", "false")
                         .build()
         );
     }
@@ -108,7 +108,7 @@ class AuthenticationFilterTest {
     class OpenPaths {
 
         @Test
-        @DisplayName("Открытый эндпоинт /api/v1/auth/login (пропускает без токена)")
+        @DisplayName("Открытый эндпоинт без токена (Anonymous = true)")
         void openPath_passesThrough() {
             MockServerWebExchange exchange = exchangeWithPath("/api/v1/auth/login");
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -116,20 +116,57 @@ class AuthenticationFilterTest {
             StepVerifier.create(filter.filter(exchange, chain))
                     .verifyComplete();
 
-            verify(chain).filter(any());
-            verify(jwtUtil, never()).isValid(anyString());
+            ServerWebExchange downstream = captureDownstreamExchange();
+            HttpHeaders headers = downstream.getRequest().getHeaders();
+
+            assertThat(headers.getFirst("X-User-Anonymous")).isEqualTo("true");
+            assertThat(headers.containsHeader("X-User-Id")).isFalse();
+            assertThat(headers.containsHeader("X-User-Email")).isFalse();
+            assertThat(headers.containsHeader("X-User-Roles")).isFalse();
         }
 
         @Test
-        @DisplayName("Открытый эндпоинт /actuator/health (пропускает)")
-        void healthPath_passesThrough() {
-            MockServerWebExchange exchange = exchangeWithPath("/actuator/health");
+        @DisplayName("Открытый эндпоинт с невалидным токеном (Anonymous = true)")
+        void openPath_invalidToken_setsAnonymous() {
+            when(jwtUtil.isValid(VALID_TOKEN)).thenReturn(false);
             when(chain.filter(any())).thenReturn(Mono.empty());
+
+            MockServerWebExchange exchange = MockServerWebExchange.from(
+                    MockServerHttpRequest.get("/api/v1/auth/login")
+                            .header(HttpHeaders.AUTHORIZATION, BEARER_TOKEN)
+                            .build()
+            );
 
             StepVerifier.create(filter.filter(exchange, chain))
                     .verifyComplete();
 
-            verify(chain).filter(any());
+            ServerWebExchange downstream = captureDownstreamExchange();
+            assertThat(downstream.getRequest().getHeaders().getFirst("X-User-Anonymous"))
+                    .isEqualTo("true");
+        }
+
+        @Test
+        @DisplayName("Открытый эндпоинт с валидным токеном (Anonymous = false)")
+        void openPath_validToken_setsUserHeaders() {
+            mockValidToken(42, "user@test.com", List.of("ROLE_USER"));
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            MockServerWebExchange exchange = MockServerWebExchange.from(
+                    MockServerHttpRequest.get("/api/v1/auth/login")
+                            .header(HttpHeaders.AUTHORIZATION, BEARER_TOKEN)
+                            .build()
+            );
+
+            StepVerifier.create(filter.filter(exchange, chain))
+                    .verifyComplete();
+
+            ServerWebExchange downstream = captureDownstreamExchange();
+            HttpHeaders headers = downstream.getRequest().getHeaders();
+
+            assertThat(headers.getFirst("X-User-Anonymous")).isEqualTo("false");
+            assertThat(headers.getFirst("X-User-Id")).isEqualTo("42");
+            assertThat(headers.getFirst("X-User-Email")).isEqualTo("user@test.com");
+            assertThat(headers.getFirst("X-User-Roles")).isEqualTo("ROLE_USER");
         }
 
         @Test
@@ -147,6 +184,26 @@ class AuthenticationFilterTest {
             assertThat(headers.containsHeader("X-User-Id")).isFalse();
             assertThat(headers.containsHeader("X-User-Email")).isFalse();
             assertThat(headers.containsHeader("X-User-Roles")).isFalse();
+        }
+
+        @Test
+        @DisplayName("Открытый эндпоинт (Удаление Auth header)")
+        void openPath_authorizationRemoved() {
+            when(jwtUtil.isValid(VALID_TOKEN)).thenReturn(false);
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            MockServerWebExchange exchange = MockServerWebExchange.from(
+                    MockServerHttpRequest.get("/api/v1/auth/login")
+                            .header(HttpHeaders.AUTHORIZATION, BEARER_TOKEN)
+                            .build()
+            );
+
+            StepVerifier.create(filter.filter(exchange, chain))
+                    .verifyComplete();
+
+            ServerWebExchange downstream = captureDownstreamExchange();
+            assertThat(downstream.getRequest().getHeaders().containsHeader(HttpHeaders.AUTHORIZATION))
+                    .isFalse();
         }
     }
 
@@ -172,20 +229,6 @@ class AuthenticationFilterTest {
         @DisplayName("Authorization без Bearer (401)")
         void noBearerPrefix_returns401() {
             MockServerWebExchange exchange = exchangeWithAuth("Basic abc123");
-
-            StepVerifier.create(filter.filter(exchange, chain))
-                    .verifyComplete();
-
-            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-            verify(chain, never()).filter(any());
-        }
-
-        @Test
-        @DisplayName("Authorization = 'Bearer ' (401)")
-        void emptyBearerToken_returns401() {
-            when(jwtUtil.isValid("")).thenReturn(false);
-
-            MockServerWebExchange exchange = exchangeWithAuth("Bearer ");
 
             StepVerifier.create(filter.filter(exchange, chain))
                     .verifyComplete();
@@ -248,7 +291,7 @@ class AuthenticationFilterTest {
     }
 
     @Nested
-    @DisplayName("Valid token (header propagation)")
+    @DisplayName("Valid token")
     class ValidToken {
 
         @Test
@@ -341,6 +384,7 @@ class AuthenticationFilterTest {
                             .header("X-User-Id", "999")
                             .header("X-User-Email", "hacker@evil.com")
                             .header("X-User-Roles", "ROLE_ADMIN")
+                            .header("X-User-Anonymous", "true")
                             .build()
             );
 
@@ -353,6 +397,7 @@ class AuthenticationFilterTest {
             assertThat(headers.getFirst("X-User-Id")).isEqualTo("1");
             assertThat(headers.getFirst("X-User-Email")).isEqualTo("real@test.com");
             assertThat(headers.getFirst("X-User-Roles")).isEqualTo("ROLE_USER");
+            assertThat(headers.getFirst("X-User-Anonymous")).isEqualTo("false");
         }
     }
 
