@@ -14,4 +14,6 @@ import java.util.List;
 public class GatewayProperties {
 
     private List<String> openPaths;
+    private List<String> corsAllowedOrigins = List.of("*");
+    private boolean corsAllowCredentials = false;
 }
