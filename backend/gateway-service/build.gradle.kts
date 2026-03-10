@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.boot.starter)
 
     testImplementation(libs.boot.starter.test)
+    testImplementation(libs.reactor.test)
 }
 
 description = "gateway-service"
