@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.boot.starter)
 
     testImplementation(libs.boot.starter.test)
+    testImplementation(libs.boot.webtestclient)
     testImplementation(libs.reactor.test)
 }
 

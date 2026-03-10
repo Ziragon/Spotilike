@@ -20,4 +20,4 @@ app-gateway:
 application:
   security:
     jwt:
-      secret-key: "dGhpcy1pcy1hLXNlY3JldC1rZXktMzItYnl0ZXMh"
+      secret-key: "dGhpcy1pcy1hLXNlY3JldC1rZXktMzItYnl0ZXMhZXC"

@@ -28,6 +28,7 @@ boot-starter-data-jpa           = { module = "org.springframework.boot:spring-bo
 boot-starter-security           = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springBoot" }
 boot-starter-flyway             = { module = "org.springframework.boot:spring-boot-starter-flyway", version.ref = "springBoot" }
 boot-starter-test               = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
+boot-webtestclient              = { module = "org.springframework.boot:spring-boot-webtestclient", version.ref = "springBoot" }
 
 # Spring Cloud Gateway
 cloud-dependencies              = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "springCloud" }

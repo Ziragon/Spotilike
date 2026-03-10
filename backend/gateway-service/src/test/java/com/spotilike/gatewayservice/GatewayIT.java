@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -19,8 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 @ActiveProfiles("test")
-class GatewayIntegrationTest {
+class GatewayIT {
 
     @Autowired
     private WebTestClient webClient;
@@ -46,12 +48,14 @@ class GatewayIntegrationTest {
     }
 
     @Test
-    @DisplayName("Открытый путь без токена")
+    @DisplayName("Открытый путь без токена - проходит фильтр (502)")
     void openPath_passesWithoutToken() {
         webClient.get()
                 .uri("/api/v1/auth/login")
                 .exchange()
-                .expectStatus().isEqualTo(502);
+                .expectStatus().isEqualTo(502)
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("Service unavailable");
     }
 
     @Test
@@ -64,7 +68,7 @@ class GatewayIntegrationTest {
     }
 
     @Test
-    @DisplayName("Защищённый путь с валидным токеном (пропускает)")
+    @DisplayName("Валидный токен - проходит фильтр(502")
     void protectedPath_validToken_passes() {
         webClient.get()
                 .uri("/api/v1/users/me")
