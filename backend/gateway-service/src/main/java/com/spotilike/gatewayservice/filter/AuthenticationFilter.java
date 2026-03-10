@@ -1,6 +1,7 @@
 package com.spotilike.gatewayservice.filter;
 
 import com.spotilike.gatewayservice.config.AppGatewayProperties;
+import com.spotilike.gatewayservice.util.GatewayErrorResponse;
 import com.spotilike.gatewayservice.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import lombok.NonNull;
@@ -9,12 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
@@ -54,13 +52,13 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("Missing or invalid Authorization header for path: {}", path);
-            return onError(exchange, "Missing JWT Token");
+            return GatewayErrorResponse.send(exchange, HttpStatus.UNAUTHORIZED, "Missing JWT Token");
         }
 
         String token = authHeader.substring(7);
         if (!jwtUtil.isValid(token)) {
             log.warn("Invalid JWT for path: {}", path);
-            return onError(exchange, "Token is not valid");
+            return GatewayErrorResponse.send(exchange, HttpStatus.UNAUTHORIZED, "Token is not valid");
         }
 
         Claims claims = jwtUtil.getAllClaimsFromToken(token);
@@ -68,7 +66,8 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         Integer userIdClaim = claims.get("userId", Integer.class);
         String email = claims.getSubject();
         if (userIdClaim == null || email == null) {
-            return onError(exchange, "Token does not have claims");
+            log.warn("JWT missing required claims for path: {}", path);
+            return GatewayErrorResponse.send(exchange, HttpStatus.UNAUTHORIZED, "Token does not have claims");
         }
 
         @SuppressWarnings("unchecked")
@@ -93,15 +92,5 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     private boolean isOpenPath(String path) {
         return gatewayProperties.getOpenPaths().stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, path));
-    }
-
-    @SuppressWarnings("NullableProblems")
-    private Mono<Void> onError(ServerWebExchange exchange, String message) {
-        ServerHttpResponse response = exchange.getResponse();
-        response.setStatusCode(HttpStatus.UNAUTHORIZED);
-        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        byte[] bytes = ("{\"error\":\"" + message + "\"}").getBytes();
-        DataBuffer buffer = response.bufferFactory().wrap(bytes);
-        return response.writeWith(Mono.just(buffer));
     }
 }
