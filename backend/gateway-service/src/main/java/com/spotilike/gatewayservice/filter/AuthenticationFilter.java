@@ -41,31 +41,46 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                     h.remove("X-User-Id");
                     h.remove("X-User-Email");
                     h.remove("X-User-Roles");
+                    h.remove("X-User-Anonymous");
                 })
                 .build();
         exchange = exchange.mutate().request(request).build();
 
-        if (isOpenPath(path)) {
-            return chain.filter(exchange);
-        }
+        boolean open = isOpenPath(path);
 
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("Missing or invalid Authorization header for path: {}", path);
+        boolean hasToken = authHeader != null && authHeader.startsWith("Bearer ");
+
+        // Нет токена
+        if (!hasToken) {
+            if (open) {
+                return chain.filter(withAnonymous(exchange, request));
+            }
+            log.warn("Missing Authorization header for path: {}", path);
             return GatewayErrorResponse.send(exchange, HttpStatus.UNAUTHORIZED, "Missing JWT Token");
         }
 
         String token = authHeader.substring(7);
+
+        // Токен невалидный
         if (!jwtUtil.isValid(token)) {
+            if (open) {
+                return chain.filter(withAnonymous(exchange, request));
+            }
             log.warn("Invalid JWT for path: {}", path);
             return GatewayErrorResponse.send(exchange, HttpStatus.UNAUTHORIZED, "Token is not valid");
         }
 
+        // Токен валидный - парсим
         Claims claims = jwtUtil.getAllClaimsFromToken(token);
 
         Integer userIdClaim = claims.get("userId", Integer.class);
         String email = claims.getSubject();
+
         if (userIdClaim == null || email == null) {
+            if (open) {
+                return chain.filter(withAnonymous(exchange, request));
+            }
             log.warn("JWT missing required claims for path: {}", path);
             return GatewayErrorResponse.send(exchange, HttpStatus.UNAUTHORIZED, "Token does not have claims");
         }
@@ -79,9 +94,18 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 .header("X-User-Id", String.valueOf(userIdClaim))
                 .header("X-User-Email", email)
                 .header("X-User-Roles", rolesHeader)
+                .header("X-User-Anonymous", "false")
                 .build();
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
+    }
+
+    private ServerWebExchange withAnonymous(ServerWebExchange exchange, ServerHttpRequest request) {
+        ServerHttpRequest anonymousRequest = request.mutate()
+                .headers(h -> h.remove(HttpHeaders.AUTHORIZATION))
+                .header("X-User-Anonymous", "true")
+                .build();
+        return exchange.mutate().request(anonymousRequest).build();
     }
 
     @Override
