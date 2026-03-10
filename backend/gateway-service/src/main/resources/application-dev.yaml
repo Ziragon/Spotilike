@@ -30,10 +30,7 @@ spring:
 application:
   security:
     jwt:
-      secret-key: "bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE="
-      expiration: 3600000 # 1 час
-      refresh-token:
-        expiration: 604800000 # 7 дней
+      secret-key: ${JWT_SECRET_KEY:bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE=}
 
 logging:
   level:

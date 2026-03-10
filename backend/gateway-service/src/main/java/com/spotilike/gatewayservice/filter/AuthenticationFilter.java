@@ -1,11 +1,11 @@
 package com.spotilike.gatewayservice.filter;
 
+import com.spotilike.gatewayservice.config.GatewayProperties;
 import com.spotilike.gatewayservice.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -28,10 +28,8 @@ import java.util.List;
 public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     private final JwtUtil jwtUtil;
+    private final GatewayProperties gatewayProperties;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
-
-    @Value("${gateway.open-paths}")
-    private List<String> openPaths;
 
     @Override
     @SuppressWarnings("NullableProblems")
@@ -93,7 +91,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isOpenPath(String path) {
-        return openPaths.stream()
+        return gatewayProperties.getOpenPaths().stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
 
