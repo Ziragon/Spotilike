@@ -26,6 +26,13 @@ application:
       refresh-token:
         expiration: 604800000 # 7 дней
 
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+
 logging:
   level:
     root: WARN

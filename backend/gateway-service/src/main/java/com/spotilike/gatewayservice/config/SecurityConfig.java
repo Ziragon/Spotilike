@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final GatewayProperties gatewayProperties;
+    private final AppGatewayProperties gatewayProperties;
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {

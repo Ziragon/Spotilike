@@ -11,11 +11,17 @@ spring:
               filters:
                 - StripPrefix=0
 
-gateway:
+app-gateway:
   cors-allowed-origins:
     - "https://spotilike.com"
     - "https://www.spotilike.com"
   cors-allow-credentials: true
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
 
 logging:
   level:

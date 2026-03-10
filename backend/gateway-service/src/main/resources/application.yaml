@@ -9,15 +9,30 @@ server:
   port: ${SERVER_PORT:8000}
   shutdown: graceful
 
-gateway:
+app-gateway:
   open-paths:
     - /api/v1/auth/**
     - /actuator/health
+    - /swagger-ui.html
+    - /swagger-ui/**
+    - /v3/api-docs/**
+    - /webjars/**
 
 application:
   security:
     jwt:
       secret-key: ${JWT_SECRET_KEY:must-be-overridden}
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: User Service
+        url: /api/v1/auth/v3/api-docs
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
 
 logging:
   level:

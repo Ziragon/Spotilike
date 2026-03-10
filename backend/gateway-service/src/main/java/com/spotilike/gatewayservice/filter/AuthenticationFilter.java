@@ -1,6 +1,6 @@
 package com.spotilike.gatewayservice.filter;
 
-import com.spotilike.gatewayservice.config.GatewayProperties;
+import com.spotilike.gatewayservice.config.AppGatewayProperties;
 import com.spotilike.gatewayservice.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import lombok.NonNull;
@@ -28,7 +28,7 @@ import java.util.List;
 public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     private final JwtUtil jwtUtil;
-    private final GatewayProperties gatewayProperties;
+    private final AppGatewayProperties gatewayProperties;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Override

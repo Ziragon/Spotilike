@@ -34,7 +34,8 @@ cloud-starter-gateway           = { module = "org.springframework.cloud:spring-c
 
 # Validation & Docs
 jakarta-validation              = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakartaValidation" }
-springdoc-ui                    = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springDoc" }
+springdoc-webmvc-ui             = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springDoc" }
+springdoc-webflux-ui            = { module = "org.springdoc:springdoc-openapi-starter-webflux-ui", version.ref = "springDoc" }
 
 # Database
 postgresql                      = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
@@ -78,7 +79,7 @@ security = [
 web = [
     "boot-starter-web",
     "jakarta-validation",
-    "springdoc-ui"
+    "springdoc-webmvc-ui"
 ]
 
 test-infrastructure = [

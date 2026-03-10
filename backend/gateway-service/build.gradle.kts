@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.jackson.core)
     implementation(libs.cloud.starter.gateway)
     implementation(libs.boot.starter.security)
+    implementation(libs.springdoc.webflux.ui)
 
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)

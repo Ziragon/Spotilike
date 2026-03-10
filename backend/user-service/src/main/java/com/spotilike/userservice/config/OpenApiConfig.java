@@ -16,8 +16,8 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${server.port}")
-    private int serverPort;
+    @Value("${openapi.gateway-url:http://localhost:8000}")
+    private String gatewayUrl;
 
     @Bean
     public OpenAPI openAPI() {
@@ -35,8 +35,8 @@ public class OpenApiConfig {
                 )
                 .servers(List.of(
                         new Server()
-                                .url("http://localhost:" + serverPort)
-                                .description("Local dev")
+                                .url(gatewayUrl)
+                                .description("Gateway")
                 ))
                 .addSecurityItem(new SecurityRequirement()
                         .addList(securitySchemeName))

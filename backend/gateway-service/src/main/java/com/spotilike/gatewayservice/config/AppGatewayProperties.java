@@ -10,8 +10,8 @@ import java.util.List;
 @Getter
 @Setter
 @Component
-@ConfigurationProperties(prefix = "gateway")
-public class GatewayProperties {
+@ConfigurationProperties(prefix = "app-gateway")
+public class AppGatewayProperties {
 
     private List<String> openPaths;
     private List<String> corsAllowedOrigins = List.of("*");
