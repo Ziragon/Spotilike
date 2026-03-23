@@ -11,7 +11,9 @@ server:
 
 app-gateway:
   open-paths:
-    - /api/v1/auth/**
+    - /api/v1/auth/login
+    - /api/v1/auth/register
+    - /api/v1/auth/hello
     - /actuator/health
     - /swagger-ui.html
     - /swagger-ui/**

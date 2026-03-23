@@ -3,6 +3,7 @@ package com.spotilike.userservice.controller;
 import com.spotilike.userservice.dto.request.LoginRequest;
 import com.spotilike.userservice.dto.request.RegisterRequest;
 import com.spotilike.userservice.dto.response.AuthResponse;
+import com.spotilike.userservice.security.UserPrincipal;
 import com.spotilike.userservice.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,6 +58,16 @@ public class AuthController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/test")
+    public ResponseEntity<String> hello(@AuthenticationPrincipal UserPrincipal principal) {
+
+        if (principal == null) {
+            return ResponseEntity.ok("Hello, you're guest");
+        }
+
+        return ResponseEntity.ok("Hello, you're auth user: " + principal.email());
     }
 
     private String extractIp(HttpServletRequest req) {

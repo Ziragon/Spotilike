@@ -27,35 +27,37 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
         String anonymousHeader = request.getHeader("X-User-Anonymous");
 
+        // Обход гейтвея - аноним хедер не может быть null
         if (anonymousHeader == null) {
+            log.error("Security violation: Request bypassed Gateway (missing X-User-Anonymous header)");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Direct access is prohibited");
+            return;
+        }
+
+        // Аноним запрос без токена
+        if ("true".equals(anonymousHeader)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        boolean anonymous = "true".equals(anonymousHeader);
+        // Обработка хедеров
+        String userIdHeader = request.getHeader("X-User-Id");
+        String email = request.getHeader("X-User-Email");
+        String rolesHeader = request.getHeader("X-User-Roles");
 
-        if (anonymous) {
-            UserPrincipal principal = new UserPrincipal(null, null, List.of(), true);
-            setAuthentication(principal);
-        } else {
-            String userIdHeader = request.getHeader("X-User-Id");
-            String email = request.getHeader("X-User-Email");
-            String rolesHeader = request.getHeader("X-User-Roles");
-
-            if (userIdHeader == null || email == null) {
-                log.warn("Missing required user headers");
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            Integer userId = Integer.parseInt(userIdHeader);
-            List<String> roles = (rolesHeader != null && !rolesHeader.isBlank())
-                    ? Arrays.asList(rolesHeader.split(","))
-                    : List.of();
-
-            UserPrincipal principal = new UserPrincipal(userId, email, roles, false);
-            setAuthentication(principal);
+        if (userIdHeader == null || email == null) {
+            log.warn("Gateway failed to provide mandatory user headers for authenticated request");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid internal credentials");
+            return;
         }
+
+        Integer userId = Integer.parseInt(userIdHeader);
+        List<String> roles = (rolesHeader != null && !rolesHeader.isBlank())
+                ? Arrays.asList(rolesHeader.split(","))
+                : List.of();
+
+        UserPrincipal principal = new UserPrincipal(userId, email, roles, false);
+        setAuthentication(principal);
 
         filterChain.doFilter(request, response);
     }
