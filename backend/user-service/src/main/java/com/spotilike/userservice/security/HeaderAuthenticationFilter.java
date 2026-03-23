@@ -7,8 +7,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -19,6 +23,12 @@ import java.util.List;
 @Slf4j
 @Component
 public class HeaderAuthenticationFilter extends OncePerRequestFilter {
+
+    private final SecurityContextHolderStrategy securityContextHolderStrategy =
+            SecurityContextHolder.getContextHolderStrategy();
+
+    private final SecurityContextRepository securityContextRepository =
+            new RequestAttributeSecurityContextRepository();
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -57,22 +67,25 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
                 : List.of();
 
         UserPrincipal principal = new UserPrincipal(userId, email, roles, false);
-        setAuthentication(principal);
+        setAuthentication(principal, request, response);
 
         filterChain.doFilter(request, response);
     }
 
-    private void setAuthentication(UserPrincipal principal) {
+    private void setAuthentication(UserPrincipal principal,
+                                   HttpServletRequest request,
+                                   HttpServletResponse response) {
         var authorities = principal.roles().stream()
                 .map(SimpleGrantedAuthority::new)
                 .toList();
 
         var authentication = new PreAuthenticatedAuthenticationToken(
-                principal,    // principal
-                null,         // credentials (jwt уже проверен)
-                authorities   // granted authorities
+                principal, null, authorities
         );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        SecurityContext context = securityContextHolderStrategy.createEmptyContext();
+        context.setAuthentication(authentication);
+        securityContextHolderStrategy.setContext(context);
+        securityContextRepository.saveContext(context, request, response);
     }
 }
