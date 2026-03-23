@@ -39,19 +39,14 @@ public class JwtService {
     }
 
     public String generateToken(User user) {
-        Map<String, Object> extraClaims = Map.of(
-                "userId", user.getId(),
-                "roles", user.getRoles().stream()
-                        .map(Role::getName)
-                        .toList()
-        );
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("userId", user.getId().intValue());
+        extraClaims.put("username", user.getUsername());
+        extraClaims.put("roles", user.getRoles().stream()
+                .map(Role::getName)
+                .toList());
 
-        String token = buildToken(extraClaims, user.getEmail());
-
-        log.debug("JWT generated for user {} with roles {}",
-                user.getId(), extraClaims.get("roles"));
-
-        return token;
+        return buildToken(extraClaims, user.getEmail());
     }
 
     private String buildToken(Map<String, Object> extraClaims,
@@ -67,6 +62,10 @@ public class JwtService {
     }
 
     public String extractUsername(String token) {
+        return extractClaim(token, claims -> claims.get("username", String.class));
+    }
+
+    public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
