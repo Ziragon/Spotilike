@@ -8,7 +8,6 @@ import com.spotilike.userservice.dto.response.AuthResponse;
 import com.spotilike.userservice.exception.auth.InvalidCredentialsException;
 import com.spotilike.userservice.exception.conflict.DuplicateEmailException;
 import com.spotilike.userservice.exception.notfound.UserNotFoundException;
-import com.spotilike.userservice.security.HeaderAuthenticationFilter;
 import com.spotilike.userservice.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, HeaderAuthenticationFilter.class, JacksonAutoConfiguration.class})
+@Import({SecurityConfig.class, JacksonAutoConfiguration.class})
 class AuthControllerTest {
 
     @Autowired
