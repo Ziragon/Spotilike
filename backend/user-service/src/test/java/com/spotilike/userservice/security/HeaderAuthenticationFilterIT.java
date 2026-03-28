@@ -1,33 +1,14 @@
 package com.spotilike.userservice.security;
 
-import com.spotilike.userservice.config.SecurityConfig;
-import com.spotilike.userservice.controller.AuthController;
-import com.spotilike.userservice.service.AuthService;
-import com.spotilike.userservice.service.JwtService;
+import com.spotilike.userservice.BaseWebTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = AuthController.class)
-@Import({HeaderAuthenticationFilter.class, SecurityConfig.class})
-class HeaderAuthenticationFilterIT {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
-    private AuthService authService;
-
-    @MockitoBean
-    private JwtService jwtService;
+class HeaderAuthenticationFilterIT extends BaseWebTest {
 
     @Test
     @DisplayName("401 если заголовок X-User-Anonymous отсутствует")
