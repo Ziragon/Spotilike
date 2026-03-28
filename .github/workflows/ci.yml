@@ -31,10 +31,10 @@ jobs:
 
       # Права для gradle wrapper
       - name: Grant execute permission for gradlew
-        run: chmod +x ${{ matrix.service }}/gradlew
+        run: chmod +x backend/gradlew
 
       # Запуск билда и тестов
       - name: Build and Test
         run: |
           cd ${{ matrix.service }}
-          ./gradlew build --no-daemon
+          ../gradlew build --no-daemon
