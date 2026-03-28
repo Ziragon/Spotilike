@@ -1,0 +1,40 @@
+name: Spotilike CI/CD
+
+on:
+  push:
+    branches: [ "dev", "main", "infra/github-actions" ]
+  pull_request:
+    branches: [ "dev", "main" ]
+
+jobs:
+  build-and-test:
+    name: Build & Test ${{ matrix.service }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false # При падении одного билда другой продолжит работу
+      matrix:
+        service: [ 'backend/user-service', 'backend/gateway-service' ]
+
+    steps:
+      # Скачивание кода из репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Установка окружения
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle' # Кэширование зависимостей
+
+      # Права для gradle wrapper
+      - name: Grant execute permission for gradlew
+        run: chmod +x ${{ matrix.service }}/gradlew
+
+      # Запуск билда и тестов
+      - name: Build and Test
+        run: |
+          cd ${{ matrix.service }}
+          ./gradlew build --no-daemon
