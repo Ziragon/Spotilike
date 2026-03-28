@@ -73,9 +73,12 @@ class RefreshTokenServiceIT extends BaseIT {
 
         refreshTokenService.revokeAllUserTokens(testUser.getId());
 
-        assertThat(refreshTokenService.findByToken(t1).get().isRevoked())
-                .isTrue();
-        assertThat(refreshTokenService.findByToken(t2).get().isRevoked())
-                .isTrue();
+        assertThat(refreshTokenService.findByToken(t1)
+                .orElseThrow(() -> new AssertionError("Token t1 not found"))
+                .isRevoked()).isTrue();
+
+        assertThat(refreshTokenService.findByToken(t2)
+                .orElseThrow(() -> new AssertionError("Token t2 not found"))
+                .isRevoked()).isTrue();
     }
 }

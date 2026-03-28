@@ -1,7 +1,7 @@
 package com.spotilike.userservice.config;
 
 import com.spotilike.userservice.security.HeaderAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -17,10 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
-
-    private final HeaderAuthenticationFilter headerAuthFilter;
 
     private static final String[] PUBLIC_URLS = {
             "/api/v1/auth/**",
@@ -36,7 +33,24 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public HeaderAuthenticationFilter headerAuthenticationFilter() {
+        return new HeaderAuthenticationFilter();
+    }
+
+    @Bean
+    public FilterRegistrationBean<HeaderAuthenticationFilter> disableAutoRegistration(
+            HeaderAuthenticationFilter filter) {
+        FilterRegistrationBean<HeaderAuthenticationFilter> registration =
+                new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            HeaderAuthenticationFilter headerAuthFilter) {
+
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
@@ -45,7 +59,8 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_URLS).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(headerAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
