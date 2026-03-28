@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "🔍 Search Existing Issues"
+    url: https://github.com/Ziragon/Spotilike/issues
+    about: "Please search before opening a new issue to avoid duplicates."
+
+  - name: "💬 Telegram Support"
+    url: https://t.me/theziragon
+    about: "For quick questions, setup help, or direct feedback."
