@@ -119,7 +119,10 @@ class JwtUtilTest {
         @DisplayName("Повреждённый токен (false)")
         void tamperedToken_returnsFalse() {
             String token = buildValidToken();
-            String tampered = token.substring(0, token.length() - 1) + "Z";
+
+            String[] parts = token.split("\\.");
+            parts[2] = "invalidSignatureValueThatIsDefinitelyWrong";
+            String tampered = String.join(".", parts);
 
             assertThat(jwtUtil.isValid(tampered)).isFalse();
         }
