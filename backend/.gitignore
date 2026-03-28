@@ -63,3 +63,6 @@ Thumbs.db
 # Gradle files
 **/.gradle/
 **/.kotlin/
+
+# Need for ci build
+!gradle/wrapper/gradle-wrapper.jar
