@@ -9,25 +9,25 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = AuthController.class)
-@Import({HeaderAuthenticationFilter.class, SecurityConfig.class})
-class HeaderAuthenticationFilterIT {
+@WebMvcTest(AuthController.class)
+@Import(SecurityConfig.class)
+class HeaderAuthenticationFilterIT{
 
     @Autowired
-    private MockMvc mockMvc;
+    protected MockMvc mockMvc;
 
     @MockitoBean
-    private AuthService authService;
+    protected AuthService authService;
 
     @MockitoBean
-    private JwtService jwtService;
+    protected JwtService jwtService;
 
     @Test
     @DisplayName("401 если заголовок X-User-Anonymous отсутствует")

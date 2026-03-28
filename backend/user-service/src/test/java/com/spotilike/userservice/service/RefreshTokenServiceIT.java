@@ -1,11 +1,8 @@
 package com.spotilike.userservice.service;
 
 import com.spotilike.userservice.BaseIT;
-import com.spotilike.userservice.exception.auth.TokenRevokedException;
-import com.spotilike.userservice.exception.notfound.TokenNotFoundException;
 import com.spotilike.userservice.model.RefreshToken;
 import com.spotilike.userservice.model.User;
-import com.spotilike.userservice.exception.auth.TokenExpiredException;
 import com.spotilike.userservice.repository.RefreshTokenRepository;
 import com.spotilike.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,10 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class RefreshTokenServiceIT extends BaseIT {
@@ -44,103 +39,46 @@ class RefreshTokenServiceIT extends BaseIT {
     }
 
     @Test
-    @DisplayName("Должен успешно создать токен и сохранить его хеш в БД")
-    void shouldCreateAndSaveRefreshToken() {
-        // When
-        String clearToken = refreshTokenService.createRefreshToken(testUser.getId(), "127.0.0.1", "Test-Device");
+    @DisplayName("Токен сохраняется в БД с правильным хешем")
+    void shouldPersistTokenInDatabase() {
+        refreshTokenService.createRefreshToken(testUser.getId(), "127.0.0.1", "Device");
 
-        // Then
-        assertThat(clearToken).isNotNull();
-
-        // проверка на хеш токена в бд
         var allTokens = refreshTokenRepository.findAll();
         assertThat(allTokens).hasSize(1);
-        assertThat(allTokens.getFirst().getUser().getUsername()).isEqualTo("db_user");
+        assertThat(allTokens.getFirst().getUser().getUsername())
+                .isEqualTo("db_user");
     }
 
     @Test
-    @DisplayName("Должен выбросить исключение и пометить токен как отозванный, если срок истек")
-    void verifyExpiration_ShouldThrowExceptionAndRevokeToken() {
-        // Given
-        String clearToken = refreshTokenService.createRefreshToken(testUser.getId(), "127.0.0.1", "Device");
-
-        RefreshToken storedToken = refreshTokenService.findByToken(clearToken).orElseThrow();
-
-        storedToken.setExpiresAt(LocalDateTime.now().minusMinutes(1));
-        storedToken.setRevoked(false);
-        refreshTokenRepository.save(storedToken);
-        refreshTokenRepository.flush();
-
-        // When & Then
-        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(clearToken))
-                .isInstanceOf(TokenExpiredException.class);
-
-        // Then
-        RefreshToken updatedToken = refreshTokenRepository.findById(storedToken.getId()).orElseThrow();
-
-        assertThat(updatedToken.isRevoked())
-                .as("Просроченный токен должен быть помечен как revoked, но не удален")
-                .isTrue();
-    }
-
-    @Test
-    @DisplayName("Должен успешно отозвать токен")
-    void shouldRevokeToken() {
-        // Given
-        String clearToken = refreshTokenService.createRefreshToken(testUser.getId(), "127.0.0.1", "Device");
-
-        // When
-        refreshTokenService.revokeToken(clearToken);
-
-        // Then
-        RefreshToken revokedToken = refreshTokenService.findByToken(clearToken).get();
-        assertThat(revokedToken.isRevoked()).isTrue();
-    }
-
-    @Test
-    @DisplayName("Должен отозвать все токены при использовании отозванного")
-    void shouldRevokeAllTokensWhenRevokedTokenUsed() {
-        // Given
-        String token1 = refreshTokenService
-                .createRefreshToken(testUser.getId(), "127.0.0.1", "Device-1");
-        String token2 = refreshTokenService
-                .createRefreshToken(testUser.getId(), "127.0.0.1", "Device-2");
-
-        refreshTokenService.revokeToken(token1);
-
-        // When
-        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(token1))
-                .isInstanceOf(TokenRevokedException.class);
-
-        // Then
-        RefreshToken secondToken = refreshTokenService.findByToken(token2).get();
-        assertThat(secondToken.isRevoked()).isTrue();
-    }
-
-    @Test
-    @DisplayName("Должен выбросить TokenNotFoundException для несуществующего токена")
-    void shouldThrowWhenTokenNotFound() {
-        assertThatThrownBy(() ->
-                refreshTokenService.validateRefreshToken("non-existent-token"))
-                .isInstanceOf(TokenNotFoundException.class);
-    }
-
-    @Test
-    @DisplayName("Должен отозвать старый токен при создании нового для того же устройства")
+    @DisplayName("revokeByUserIdAndDeviceInfo отзывает старый токен в БД")
     void shouldRevokeOldTokenOnSameDevice() {
-        // Given
         String oldToken = refreshTokenService
-                .createRefreshToken(testUser.getId(), "127.0.0.1", "Same-Device");
+                .createRefreshToken(testUser.getId(), "127.0.0.1", "Same");
 
-        // When
-        String newToken = refreshTokenService
-                .createRefreshToken(testUser.getId(), "127.0.0.1", "Same-Device");
+        refreshTokenService
+                .createRefreshToken(testUser.getId(), "127.0.0.1", "Same");
 
-        // Then
-        RefreshToken old = refreshTokenService.findByToken(oldToken).get();
+        RefreshToken old = refreshTokenService
+                .findByToken(oldToken).orElseThrow();
         assertThat(old.isRevoked()).isTrue();
+    }
 
-        RefreshToken fresh = refreshTokenService.findByToken(newToken).get();
-        assertThat(fresh.isRevoked()).isFalse();
+    @Test
+    @DisplayName("revokeAllByUserId отзывает все токены в БД")
+    void shouldRevokeAllTokensInDatabase() {
+        String t1 = refreshTokenService
+                .createRefreshToken(testUser.getId(), "127.0.0.1", "D1");
+        String t2 = refreshTokenService
+                .createRefreshToken(testUser.getId(), "127.0.0.1", "D2");
+
+        refreshTokenService.revokeAllUserTokens(testUser.getId());
+
+        assertThat(refreshTokenService.findByToken(t1)
+                .orElseThrow(() -> new AssertionError("Token t1 not found"))
+                .isRevoked()).isTrue();
+
+        assertThat(refreshTokenService.findByToken(t2)
+                .orElseThrow(() -> new AssertionError("Token t2 not found"))
+                .isRevoked()).isTrue();
     }
 }

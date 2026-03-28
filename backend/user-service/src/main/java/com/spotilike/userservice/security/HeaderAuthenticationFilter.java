@@ -13,7 +13,6 @@ import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -21,7 +20,6 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-@Component
 public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
     private final SecurityContextHolderStrategy securityContextHolderStrategy =
@@ -34,6 +32,9 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
+
+        log.debug("HeaderAuthenticationFilter called for {}",
+                request.getRequestURI());
 
         String anonymousHeader = request.getHeader("X-User-Anonymous");
 

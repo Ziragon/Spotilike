@@ -5,6 +5,7 @@ import com.spotilike.userservice.dto.request.RegisterRequest;
 import com.spotilike.userservice.dto.response.AuthResponse;
 import com.spotilike.userservice.security.UserPrincipal;
 import com.spotilike.userservice.service.AuthService;
+import com.spotilike.userservice.util.RequestUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,8 +34,8 @@ public class AuthController {
                 req.email(),
                 req.password(),
                 req.username(),
-                extractIp(httpReq),
-                extractDevice(httpReq)
+                RequestUtil.extractClientIp(httpReq),
+                RequestUtil.extractDeviceInfo(httpReq)
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -50,8 +51,8 @@ public class AuthController {
         AuthResponse response = authService.login(
                 req.email(),
                 req.password(),
-                extractIp(httpReq),
-                extractDevice(httpReq)
+                RequestUtil.extractClientIp(httpReq),
+                RequestUtil.extractDeviceInfo(httpReq)
         );
 
         return ResponseEntity.ok(response);
@@ -65,18 +66,5 @@ public class AuthController {
         }
 
         return ResponseEntity.ok("Hello, you're auth user: " + principal.email());
-    }
-
-    private String extractIp(HttpServletRequest req) {
-        String forwarded = req.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return req.getRemoteAddr();
-    }
-
-    private String extractDevice(HttpServletRequest req) {
-        String ua = req.getHeader("User-Agent");
-        return (ua != null && !ua.isBlank()) ? ua : "unknown";
     }
 }
