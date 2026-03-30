@@ -11,7 +11,7 @@ public abstract class BaseException extends RuntimeException {
 
     private final ErrorType errorType;
     private final Instant timestamp;
-    private final Map<String, Object> details;
+    private final transient Map<String, Object> details;
 
     protected BaseException(String message, ErrorType errorType) {
         this(message, errorType, null, Collections.emptyMap());
@@ -31,7 +31,7 @@ public abstract class BaseException extends RuntimeException {
                             Throwable cause, Map<String, Object> details) {
         super(message, cause);
         this.errorType = errorType;
-        this.timestamp = Instant.now();
+        this.timestamp = Instant.now();  // в проде — ок
         this.details = details != null
                 ? Collections.unmodifiableMap(details)
                 : Collections.emptyMap();

@@ -2,8 +2,8 @@ package com.spotilike.userservice.service;
 
 import com.spotilike.userservice.exception.auth.TokenExpiredException;
 import com.spotilike.userservice.exception.auth.TokenRevokedException;
-import com.spotilike.userservice.exception.notfound.TokenNotFoundException;
-import com.spotilike.userservice.exception.notfound.UserNotFoundException;
+import com.spotilike.userservice.exception.auth.TokenNotFoundException;
+import com.spotilike.userservice.exception.resource.UserNotFoundException;
 import com.spotilike.userservice.model.RefreshToken;
 import com.spotilike.userservice.model.User;
 import com.spotilike.userservice.repository.RefreshTokenRepository;

@@ -1,13 +1,15 @@
 package com.spotilike.userservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spotilike.userservice.config.ClockConfig;
 import com.spotilike.userservice.config.SecurityConfig;
 import com.spotilike.userservice.dto.request.LoginRequest;
 import com.spotilike.userservice.dto.request.RegisterRequest;
 import com.spotilike.userservice.dto.response.AuthResponse;
+import com.spotilike.userservice.exception.ErrorResponseFactory;
 import com.spotilike.userservice.exception.auth.InvalidCredentialsException;
-import com.spotilike.userservice.exception.conflict.DuplicateEmailException;
-import com.spotilike.userservice.exception.notfound.UserNotFoundException;
+import com.spotilike.userservice.exception.resource.DuplicateEmailException;
+import com.spotilike.userservice.exception.resource.UserNotFoundException;
 import com.spotilike.userservice.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,8 +29,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, JacksonAutoConfiguration.class})
-class AuthControllerTest {
+@Import({SecurityConfig.class, JacksonAutoConfiguration.class, ClockConfig.class, ErrorResponseFactory.class})
+class AuthControllerIT {
 
     @Autowired
     private MockMvc mockMvc;
@@ -111,7 +113,7 @@ class AuthControllerTest {
             @DisplayName("409 при дублировании email")
             void shouldReturn409OnDuplicateEmail() throws Exception {
                 when(authService.register(any(), any(), any(), any(), any()))
-                        .thenThrow(new DuplicateEmailException("test@mail.com"));
+                        .thenThrow(new DuplicateEmailException());
 
                 mockMvc.perform(post("/api/v1/auth/register")
                                 .header("X-User-Anonymous", "true")

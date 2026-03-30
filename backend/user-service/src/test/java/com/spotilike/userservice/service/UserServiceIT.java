@@ -1,7 +1,7 @@
 package com.spotilike.userservice.service;
 
 import com.spotilike.userservice.BaseIT;
-import com.spotilike.userservice.exception.conflict.DuplicateEmailException;
+import com.spotilike.userservice.exception.resource.DuplicateEmailException;
 import com.spotilike.userservice.model.Role;
 import com.spotilike.userservice.model.User;
 import com.spotilike.userservice.repository.RoleRepository;
