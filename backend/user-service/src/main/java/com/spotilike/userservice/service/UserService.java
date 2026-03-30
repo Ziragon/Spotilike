@@ -1,8 +1,8 @@
 package com.spotilike.userservice.service;
 
-import com.spotilike.userservice.exception.conflict.DuplicateEmailException;
-import com.spotilike.userservice.exception.notfound.RoleNotFoundException;
-import com.spotilike.userservice.exception.notfound.UserNotFoundException;
+import com.spotilike.userservice.exception.resource.DuplicateEmailException;
+import com.spotilike.userservice.exception.resource.RoleNotFoundException;
+import com.spotilike.userservice.exception.resource.UserNotFoundException;
 import com.spotilike.userservice.model.Role;
 import com.spotilike.userservice.model.User;
 import com.spotilike.userservice.repository.RoleRepository;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -33,7 +32,7 @@ public class UserService {
 
         if (userRepository.existsByEmail(email)) {
             log.warn("Duplicate registration attempt: email={}", email);
-            throw new DuplicateEmailException(email);
+            throw new DuplicateEmailException();
         }
 
         Role defaultRole = roleRepository.findByName("USER")

@@ -1,6 +1,5 @@
 package com.spotilike.userservice.exception;
 
-import com.spotilike.userservice.exception.auth.AuthException;
 import com.spotilike.userservice.exception.base.BaseException;
 import com.spotilike.userservice.exception.base.ErrorResponse;
 import com.spotilike.userservice.exception.base.ErrorType;
@@ -16,13 +15,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // BaseExceptions
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ErrorResponse> handleBaseException(
             BaseException ex,
@@ -37,7 +34,6 @@ public class GlobalExceptionHandler {
                 .body(body);
     }
 
-    // @Valid ошибки
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(
             MethodArgumentNotValidException ex,
@@ -55,6 +51,9 @@ public class GlobalExceptionHandler {
                 ))
                 .toList();
 
+        log.info("[{}] Validation failed at {}",
+                ErrorType.VALIDATION_ERROR.getCode(), request.getRequestURI());
+
         ErrorResponse body = ErrorResponse.builder()
                 .code(ErrorType.VALIDATION_ERROR.getCode())
                 .message("Validation failed")
@@ -67,12 +66,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
-    // Security ошибки
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(
             AccessDeniedException ex,
             HttpServletRequest request
     ) {
+        log.warn("[{}] Access denied at {}",
+                ErrorType.ACCESS_DENIED.getCode(), request.getRequestURI());
+
         ErrorResponse body = ErrorResponse.builder()
                 .code(ErrorType.ACCESS_DENIED.getCode())
                 .message("Access denied")
@@ -84,13 +85,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
-    // Все остальное - 500 ошибки
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(
             Exception ex,
             HttpServletRequest request
     ) {
-        // Непредвиденные ошибки — всегда ERROR уровень
         log.error("Unexpected error at {}: {}",
                 request.getRequestURI(), ex.getMessage(), ex);
 
@@ -107,17 +106,11 @@ public class GlobalExceptionHandler {
                 .body(body);
     }
 
-    // Логгирование
     private void logException(BaseException ex) {
-        if (ex instanceof AuthException) {
-            // Auth ошибки с WARN
-            log.warn("[{}] {}", ex.getErrorCode(), ex.getMessage());
-        } else if (ex.getHttpStatus().is4xxClientError()) {
-            // Клиентские ошибки с INFO
-            log.info("[{}] {}", ex.getErrorCode(), ex.getMessage());
-        } else {
-            // Серверные ошибки с ERROR и StackTrace
-            log.error("[{}] {}", ex.getErrorCode(), ex.getMessage(), ex);
+        switch (ex.getErrorType().getCategory()) {
+            case AUTH -> log.warn("[{}] {}", ex.getErrorCode(), ex.getMessage());
+            case SYSTEM -> log.error("[{}] {}", ex.getErrorCode(), ex.getMessage(), ex);
+            default -> log.info("[{}] {}", ex.getErrorCode(), ex.getMessage());
         }
     }
 }

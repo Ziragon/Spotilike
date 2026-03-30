@@ -2,8 +2,8 @@ package com.spotilike.userservice.service;
 
 import com.spotilike.userservice.dto.response.AuthResponse;
 import com.spotilike.userservice.exception.auth.InvalidCredentialsException;
-import com.spotilike.userservice.exception.conflict.DuplicateEmailException;
-import com.spotilike.userservice.exception.notfound.UserNotFoundException;
+import com.spotilike.userservice.exception.resource.DuplicateEmailException;
+import com.spotilike.userservice.exception.resource.UserNotFoundException;
 import com.spotilike.userservice.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -117,7 +117,7 @@ class AuthServiceTest {
         void shouldPropagateExceptionFromUserService() {
             // Given
             when(userService.createUser(any(), any(), any()))
-                    .thenThrow(new DuplicateEmailException("test@mail.com"));
+                    .thenThrow(new DuplicateEmailException());
 
             // When & Then
             assertThatThrownBy(() ->
