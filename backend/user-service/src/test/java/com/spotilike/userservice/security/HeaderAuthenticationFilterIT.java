@@ -1,7 +1,9 @@
 package com.spotilike.userservice.security;
 
+import com.spotilike.userservice.config.ClockConfig;
 import com.spotilike.userservice.config.SecurityConfig;
 import com.spotilike.userservice.controller.AuthController;
+import com.spotilike.userservice.exception.ErrorResponseFactory;
 import com.spotilike.userservice.service.AuthService;
 import com.spotilike.userservice.service.JwtService;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, ClockConfig.class, ErrorResponseFactory.class})
 class HeaderAuthenticationFilterIT{
 
     @Autowired
