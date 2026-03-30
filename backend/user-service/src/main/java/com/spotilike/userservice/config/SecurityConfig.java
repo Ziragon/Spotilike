@@ -1,6 +1,7 @@
 package com.spotilike.userservice.config;
 
-import com.spotilike.userservice.security.HeaderAuthenticationFilter;
+import com.spotilike.shared.security.HeaderAuthenticationFilter;
+import lombok.SneakyThrows;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,6 +48,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    @SneakyThrows
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             HeaderAuthenticationFilter headerAuthFilter) {
