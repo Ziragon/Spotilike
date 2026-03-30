@@ -6,6 +6,9 @@ dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
 
+    implementation(project(":shared-libs:shared-exception"))
+    implementation(project(":shared-libs:shared-security"))
+
     implementation(libs.boot.starter)
 
     implementation(libs.bundles.web)

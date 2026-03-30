@@ -3,10 +3,12 @@
 springBoot              = "4.0.3"
 dependencyManagement    = "1.1.7"
 jakartaValidation       = "3.1.1"
+jakartaServlet          = "6.1.0"
 springDoc               = "3.0.2"
 springCloud             = "2025.1.1"
 springCloudStarter      = "5.0.1"
 jacksonCore             = "3.1.0"
+jspecify                = "1.0.0"
 
 # Database
 postgresql              = "42.7.10"
@@ -54,6 +56,11 @@ jjwt-jackson                    = { module = "io.jsonwebtoken:jjwt-jackson", ver
 lombok                          = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 jackson-core                    = { module = "tools.jackson.core:jackson-core", version.ref = "jacksonCore" }
 
+# Shared
+jspecify                        = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+jakarta-servlet                 = { module = "jakarta.servlet:jakarta.servlet-api", version.ref = "jakartaServlet" }
+jackson-annotations             = { module = "com.fasterxml.jackson.core:jackson-annotations" }
+
 # Tests
 testcontainers-postgresql       = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 testcontainers-junit            = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
@@ -71,6 +78,15 @@ database = [
     "postgresql",
     "flyway-core",
     "flyway-postgres"
+]
+
+shared-exception = [
+    "boot-starter-web",
+    "jakarta-validation"
+]
+
+shared-security = [
+    "boot-starter-security"
 ]
 
 security = [
