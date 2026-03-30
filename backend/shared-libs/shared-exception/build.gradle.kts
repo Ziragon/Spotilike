@@ -11,4 +11,6 @@ dependencies {
     annotationProcessor(libs.lombok)
 
     compileOnly(libs.jspecify)
+
+    testImplementation(libs.boot.starter.test)
 }
