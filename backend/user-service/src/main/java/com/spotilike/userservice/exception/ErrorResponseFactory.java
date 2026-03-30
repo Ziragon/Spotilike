@@ -106,9 +106,9 @@ public class ErrorResponseFactory {
         return switch (statusCode.value()) {
             case 404 -> ErrorType.RESOURCE_NOT_FOUND.getCode();
             case 403 -> ErrorType.ACCESS_DENIED.getCode();
-            case 405 -> ErrorType.METHOD_NOT_ALLOWED.getCode();
-            case 415 -> ErrorType.UNSUPPORTED_MEDIA_TYPE.getCode();
-            case 503 -> ErrorType.SERVICE_UNAVAILABLE.getCode();
+            case 405 -> "METHOD_NOT_ALLOWED";
+            case 415 -> "UNSUPPORTED_MEDIA_TYPE";
+            case 503 -> "SERVICE_UNAVAILABLE";
             default  -> ErrorType.VALIDATION_ERROR.getCode();
         };
     }

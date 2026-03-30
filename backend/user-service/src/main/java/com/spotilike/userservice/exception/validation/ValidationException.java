@@ -14,10 +14,12 @@ public class ValidationException extends BaseException {
 
     public ValidationException(String field, String message) {
         super(
-                String.format("Validation failed for field '%s': %s",
-                        field, message),
+                String.format("Validation failed for field '%s': %s", field, message),
                 ErrorType.VALIDATION_ERROR,
-                Map.of("field", field)
+                Map.of(
+                        "field", field,
+                        "message", message
+                )
         );
     }
 

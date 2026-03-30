@@ -11,7 +11,7 @@ public abstract class BaseException extends RuntimeException {
 
     private final ErrorType errorType;
     private final Instant timestamp;
-    private final Map<String, Object> details;
+    private final transient Map<String, Object> details;
 
     protected BaseException(String message, ErrorType errorType) {
         this(message, errorType, null, Collections.emptyMap());
