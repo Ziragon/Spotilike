@@ -12,20 +12,14 @@ dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
 
-    implementation(libs.jackson.core)
-    implementation(libs.cloud.starter.gateway)
-    implementation(libs.boot.starter.security)
-    implementation(libs.springdoc.webflux.ui)
+    implementation(libs.boot.starter)
+    implementation(libs.bundles.gateway)
 
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)
 
-    implementation(libs.boot.starter)
-
-    testImplementation(libs.boot.starter.test)
-    testImplementation(libs.boot.webtestclient)
-    testImplementation(libs.reactor.test)
+    testImplementation(libs.bundles.test.gateway)
 }
 
 description = "gateway-service"
