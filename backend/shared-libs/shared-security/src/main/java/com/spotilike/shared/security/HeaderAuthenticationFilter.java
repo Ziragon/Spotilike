@@ -42,7 +42,20 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         // Обход гейтвея - аноним хедер не может быть null
         if (anonymousHeader == null) {
             log.error("Security violation: Request bypassed Gateway (missing X-User-Anonymous header)");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Direct access is prohibited");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            String jsonError = """
+                {
+                    "error": "UNAUTHORIZED",
+                    "message": "Direct access is prohibited"
+                }
+                """;
+            response.getWriter().write(jsonError);
+            response.getWriter().flush();
+
             return;
         }
 

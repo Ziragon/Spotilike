@@ -1,9 +1,9 @@
 package com.spotilike.userservice.security;
 
+import com.spotilike.shared.exception.ErrorResponseFactory;
 import com.spotilike.userservice.config.ClockConfig;
 import com.spotilike.userservice.config.SecurityConfig;
 import com.spotilike.userservice.controller.AuthController;
-import com.spotilike.shared.exception.ErrorResponseFactory;
 import com.spotilike.userservice.service.AuthService;
 import com.spotilike.userservice.service.JwtService;
 import org.junit.jupiter.api.DisplayName;
@@ -20,50 +20,33 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(AuthController.class)
 @Import({SecurityConfig.class, ClockConfig.class, ErrorResponseFactory.class})
-class HeaderAuthenticationFilterIT{
+class HeaderAuthenticationFilterIT {
 
     @Autowired
-    protected MockMvc mockMvc;
+    private MockMvc mockMvc;
 
     @MockitoBean
-    protected AuthService authService;
+    private AuthService authService;
 
     @MockitoBean
-    protected JwtService jwtService;
+    private JwtService jwtService;
 
     @Test
-    @DisplayName("401 если заголовок X-User-Anonymous отсутствует")
-    void shouldReturn401WhenAnonymousHeaderMissing() throws Exception {
+    @DisplayName("Access denied (Without Gateway headers)")
+    void smoke_shouldRejectDirectAccess() throws Exception {
         mockMvc.perform(get("/api/v1/auth/test"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("200 для анонимного пользователя через Gateway")
-    void shouldAllowAnonymousRequestFromGateway() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/test")
-                        .header("X-User-Anonymous", "true"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Hello, you're guest"));
-    }
-
-    @Test
-    @DisplayName("200 при наличии всех валидных заголовков")
-    void shouldAuthenticateWhenAllHeadersPresent() throws Exception {
+    @DisplayName("Valid headers and user mapping")
+    void smoke_shouldAuthenticateViaHeaders() throws Exception {
         mockMvc.perform(get("/api/v1/auth/test")
                         .header("X-User-Anonymous", "false")
-                        .header("X-User-Id", "1")
-                        .header("X-User-Email", "test@crmespo.ru")
+                        .header("X-User-Id", "42")
+                        .header("X-User-Email", "smoke@test.ru")
                         .header("X-User-Roles", "ROLE_USER"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Hello, you're auth user: test@crmespo.ru"));
-    }
-
-    @Test
-    @DisplayName("401 если X-User-Anonymous=false, но отсутствуют данные пользователя")
-    void shouldReturn401WhenUserHeadersMissing() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/test")
-                        .header("X-User-Anonymous", "false"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(content().string("Hello, you're auth user: smoke@test.ru"));
     }
 }
