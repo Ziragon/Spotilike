@@ -1,4 +1,4 @@
-package com.spotilike.userservice.exception;
+package com.spotilike.userservice.exception.validation;
 
 import com.spotilike.userservice.exception.base.BaseException;
 import com.spotilike.userservice.exception.base.ErrorType;
