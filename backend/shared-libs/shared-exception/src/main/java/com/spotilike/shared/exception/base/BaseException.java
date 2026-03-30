@@ -1,4 +1,4 @@
-package com.spotilike.userservice.exception.base;
+package com.spotilike.shared.exception.base;
 
 import lombok.Getter;
 
@@ -7,31 +7,31 @@ import java.util.Collections;
 import java.util.Map;
 
 @Getter
-public abstract class BaseException extends RuntimeException {
+public class BaseException extends RuntimeException {
 
     private final ErrorType errorType;
     private final Instant timestamp;
     private final transient Map<String, Object> details;
 
-    protected BaseException(String message, ErrorType errorType) {
+    public BaseException(String message, ErrorType errorType) {
         this(message, errorType, null, Collections.emptyMap());
     }
 
-    protected BaseException(String message, ErrorType errorType,
-                            Map<String, Object> details) {
+    public BaseException(String message, ErrorType errorType,
+                         Map<String, Object> details) {
         this(message, errorType, null, details);
     }
 
-    protected BaseException(String message, ErrorType errorType,
-                            Throwable cause) {
+    public BaseException(String message, ErrorType errorType,
+                         Throwable cause) {
         this(message, errorType, cause, Collections.emptyMap());
     }
 
-    protected BaseException(String message, ErrorType errorType,
-                            Throwable cause, Map<String, Object> details) {
+    public BaseException(String message, ErrorType errorType,
+                         Throwable cause, Map<String, Object> details) {
         super(message, cause);
         this.errorType = errorType;
-        this.timestamp = Instant.now();  // в проде — ок
+        this.timestamp = Instant.now();
         this.details = details != null
                 ? Collections.unmodifiableMap(details)
                 : Collections.emptyMap();

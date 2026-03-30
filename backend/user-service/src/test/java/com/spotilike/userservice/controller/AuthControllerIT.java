@@ -6,7 +6,7 @@ import com.spotilike.userservice.config.SecurityConfig;
 import com.spotilike.userservice.dto.request.LoginRequest;
 import com.spotilike.userservice.dto.request.RegisterRequest;
 import com.spotilike.userservice.dto.response.AuthResponse;
-import com.spotilike.userservice.exception.ErrorResponseFactory;
+import com.spotilike.shared.exception.ErrorResponseFactory;
 import com.spotilike.userservice.exception.auth.InvalidCredentialsException;
 import com.spotilike.userservice.exception.resource.DuplicateEmailException;
 import com.spotilike.userservice.exception.resource.UserNotFoundException;
