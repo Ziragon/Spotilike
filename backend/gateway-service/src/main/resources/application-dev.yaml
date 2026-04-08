@@ -3,6 +3,8 @@ spring:
     gateway:
       server:
         webflux:
+          default-filters:
+            - PreserveHostHeader
           routes:
             - id: user-service-api-docs
               uri: ${USER_SERVICE_URL:http://localhost:8081}
