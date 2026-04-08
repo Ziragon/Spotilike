@@ -108,7 +108,7 @@ class AuthenticationFilterTest {
     class OpenPaths {
 
         @Test
-        @DisplayName("Открытый эндпоинт без токена (Anonymous = true)")
+        @DisplayName("Open path without token (Anonymous = true)")
         void openPath_passesThrough() {
             MockServerWebExchange exchange = exchangeWithPath("/api/v1/auth/login");
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -126,7 +126,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Открытый эндпоинт с невалидным токеном (Anonymous = true)")
+        @DisplayName("Open path with invalid token (Anonymous = true)")
         void openPath_invalidToken_setsAnonymous() {
             when(jwtUtil.isValid(VALID_TOKEN)).thenReturn(false);
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -146,7 +146,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Открытый эндпоинт с валидным токеном (Anonymous = false)")
+        @DisplayName("Open path with valid token (Anonymous = false)")
         void openPath_validToken_setsUserHeaders() {
             mockValidToken(42, "user@test.com", List.of("ROLE_USER"));
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -170,7 +170,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Открытый эндпоинт (удаляет spoofed заголовки)")
+        @DisplayName("Open path (will delete spoofed headers)")
         void openPath_stripsSpoofedHeaders() {
             MockServerWebExchange exchange = exchangeWithSpoofedHeaders();
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -187,7 +187,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Открытый эндпоинт (Удаление Auth header)")
+        @DisplayName("Open path (will delete Auth header)")
         void openPath_authorizationRemoved() {
             when(jwtUtil.isValid(VALID_TOKEN)).thenReturn(false);
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -212,7 +212,7 @@ class AuthenticationFilterTest {
     class MissingAuth {
 
         @Test
-        @DisplayName("Нет Authorization header (401)")
+        @DisplayName("Missing Authorization header (401)")
         void noAuthHeader_returns401() {
             MockServerWebExchange exchange = exchangeWithPath("/api/v1/users/me");
 
@@ -226,7 +226,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Authorization без Bearer (401)")
+        @DisplayName("Authorization without Bearer (401)")
         void noBearerPrefix_returns401() {
             MockServerWebExchange exchange = exchangeWithAuth("Basic abc123");
 
@@ -243,7 +243,7 @@ class AuthenticationFilterTest {
     class InvalidJwt {
 
         @Test
-        @DisplayName("Невалидный токен (401)")
+        @DisplayName("Invalid token (401)")
         void invalidToken_returns401() {
             when(jwtUtil.isValid(VALID_TOKEN)).thenReturn(false);
 
@@ -262,7 +262,7 @@ class AuthenticationFilterTest {
     class MissingClaims {
 
         @Test
-        @DisplayName("Токен без userId (401)")
+        @DisplayName("Token without userId (401)")
         void missingUserId_returns401() {
             mockValidToken(null, "user@test.com", List.of("ROLE_USER"));
 
@@ -276,7 +276,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Токен без email (subject) (401)")
+        @DisplayName("Token without email (subject) (401)")
         void missingEmail_returns401() {
             mockValidToken(1, null, List.of("ROLE_USER"));
 
@@ -295,7 +295,7 @@ class AuthenticationFilterTest {
     class ValidToken {
 
         @Test
-        @DisplayName("Прокидывает X-User-Id")
+        @DisplayName("Creates a X-User-Id")
         void setsUserIdHeader() {
             mockValidToken(42, "user@test.com", List.of("ROLE_USER"));
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -310,7 +310,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Прокидывает X-User-Email")
+        @DisplayName("Creates a X-User-Email")
         void setsUserEmailHeader() {
             mockValidToken(1, "admin@test.com", List.of("ROLE_ADMIN"));
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -326,7 +326,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Прокидывает X-User-Roles (несколько ролей)")
+        @DisplayName("Creates a X-User-Roles (many roles)")
         void setsUserRolesHeader() {
             mockValidToken(1, "user@test.com", List.of("ROLE_ADMIN", "ROLE_USER"));
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -342,7 +342,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Roles = null (пустая строка)")
+        @DisplayName("Roles = null")
         void nullRoles_setsEmptyHeader() {
             mockValidToken(1, "user@test.com", null);
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -357,7 +357,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Удаляет Authorization хедер из downstream-запроса")
+        @DisplayName("Will delete Authorization header from downstream-request")
         void removesAuthorizationHeader() {
             mockValidToken(1, "user@test.com", List.of("ROLE_USER"));
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -373,7 +373,7 @@ class AuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Удаляет spoofed хедеры и заменяет из токена")
+        @DisplayName("Will delete spoofed headers and replace them from the token")
         void replacesSpoofedHeaders() {
             mockValidToken(1, "real@test.com", List.of("ROLE_USER"));
             when(chain.filter(any())).thenReturn(Mono.empty());
@@ -406,7 +406,7 @@ class AuthenticationFilterTest {
     class ErrorResponse {
 
         @Test
-        @DisplayName("401 содержит JSON body с ошибкой")
+        @DisplayName("401 contains JSON body with error")
         void errorResponseHasJsonBody() {
             MockServerWebExchange exchange = exchangeWithPath("/api/v1/users/me");
 

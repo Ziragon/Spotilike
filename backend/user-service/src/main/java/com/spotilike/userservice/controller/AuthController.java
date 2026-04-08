@@ -3,7 +3,7 @@ package com.spotilike.userservice.controller;
 import com.spotilike.userservice.dto.request.LoginRequest;
 import com.spotilike.userservice.dto.request.RegisterRequest;
 import com.spotilike.userservice.dto.response.AuthResponse;
-import com.spotilike.userservice.security.UserPrincipal;
+import com.spotilike.shared.security.UserPrincipal;
 import com.spotilike.userservice.service.AuthService;
 import com.spotilike.userservice.util.RequestUtil;
 import jakarta.servlet.http.HttpServletRequest;

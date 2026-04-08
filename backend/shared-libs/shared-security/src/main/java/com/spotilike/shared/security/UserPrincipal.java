@@ -1,4 +1,4 @@
-package com.spotilike.userservice.security;
+package com.spotilike.shared.security;
 
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,7 +25,7 @@ public record UserPrincipal(
 
     @Override
     public String getPassword() {
-        // В вашей архитектуре пароль проверяется на шлюзе
+        // Пароль проверяется на гейтвее
         return "";
     }
 

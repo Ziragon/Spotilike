@@ -7,16 +7,18 @@ dependencies {
     annotationProcessor(libs.lombok)
 
     implementation(libs.boot.starter)
+    implementation(libs.jspecify)
+
+    implementation(project(":shared-libs:shared-exception"))
+    implementation(project(":shared-libs:shared-security"))
 
     implementation(libs.bundles.web)
     implementation(libs.bundles.database)
-    implementation(libs.bundles.security)
-    implementation("org.jspecify:jspecify:1.0.0")
+    implementation(libs.bundles.jwt)
+    implementation(libs.boot.starter.security)
 
-    testImplementation(libs.boot.starter.test)
+    testImplementation(libs.bundles.test.web)
     testImplementation(libs.bundles.test.infrastructure)
-    testImplementation(libs.boot.starter.webmvc.test)
-    testImplementation("org.springframework.security:spring-security-test")
 }
 
 description = "user-service"

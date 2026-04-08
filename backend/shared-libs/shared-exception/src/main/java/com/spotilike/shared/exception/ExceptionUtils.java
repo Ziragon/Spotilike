@@ -1,4 +1,4 @@
-package com.spotilike.userservice.exception;
+package com.spotilike.shared.exception;
 
 import jakarta.validation.Path;
 import org.apache.catalina.connector.ClientAbortException;

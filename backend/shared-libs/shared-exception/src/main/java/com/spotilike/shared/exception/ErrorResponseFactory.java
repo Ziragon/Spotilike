@@ -1,7 +1,7 @@
-package com.spotilike.userservice.exception;
+package com.spotilike.shared.exception;
 
-import com.spotilike.userservice.exception.base.ErrorResponse;
-import com.spotilike.userservice.exception.base.ErrorType;
+import com.spotilike.shared.exception.base.ErrorResponse;
+import com.spotilike.shared.exception.base.ErrorType;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.TypeMismatchException;

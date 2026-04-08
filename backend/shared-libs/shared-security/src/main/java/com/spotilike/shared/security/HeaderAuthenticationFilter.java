@@ -1,4 +1,4 @@
-package com.spotilike.userservice.security;
+package com.spotilike.shared.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,7 +42,20 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         // Обход гейтвея - аноним хедер не может быть null
         if (anonymousHeader == null) {
             log.error("Security violation: Request bypassed Gateway (missing X-User-Anonymous header)");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Direct access is prohibited");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            String jsonError = """
+                {
+                    "error": "UNAUTHORIZED",
+                    "message": "Direct access is prohibited"
+                }
+                """;
+            response.getWriter().write(jsonError);
+            response.getWriter().flush();
+
             return;
         }
 
@@ -62,7 +76,17 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Integer userId = Integer.parseInt(userIdHeader);
+        // Валидация поступающего userId
+        int userId;
+        try {
+            userId = Integer.parseInt(userIdHeader);
+        } catch (NumberFormatException _) {
+            log.warn("Invalid X-User-Id header: {}", userIdHeader);
+            sendError(response);
+            return;
+        }
+
+        // Парсинг ролей
         List<String> roles = (rolesHeader != null && !rolesHeader.isBlank())
                 ? Arrays.asList(rolesHeader.split(","))
                 : List.of();
@@ -88,5 +112,17 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         context.setAuthentication(authentication);
         securityContextHolderStrategy.setContext(context);
         securityContextRepository.saveContext(context, request, response);
+    }
+
+    // Отправка ответа в JSON
+    private void sendError(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(
+                """
+                {"code":"UNAUTHORIZED","message":"%s","status":%d}
+                """.formatted("Invalid internal credentials", HttpServletResponse.SC_UNAUTHORIZED).strip()
+        );
     }
 }

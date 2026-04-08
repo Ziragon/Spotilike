@@ -1,4 +1,4 @@
-package com.spotilike.userservice.exception.base;
+package com.spotilike.shared.exception.base;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;

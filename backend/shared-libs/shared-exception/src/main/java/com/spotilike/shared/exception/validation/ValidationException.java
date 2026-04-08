@@ -1,7 +1,7 @@
-package com.spotilike.userservice.exception.validation;
+package com.spotilike.shared.exception.validation;
 
-import com.spotilike.userservice.exception.base.BaseException;
-import com.spotilike.userservice.exception.base.ErrorType;
+import com.spotilike.shared.exception.base.BaseException;
+import com.spotilike.shared.exception.base.ErrorType;
 
 import java.util.List;
 import java.util.Map;
