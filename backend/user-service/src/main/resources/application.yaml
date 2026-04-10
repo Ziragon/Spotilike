@@ -22,6 +22,7 @@ spring:
         default_batch_fetch_size: 16
         jdbc:
           batch_size: 20
+          time_zone: UTC
         order_inserts: true
         order_updates: true
 

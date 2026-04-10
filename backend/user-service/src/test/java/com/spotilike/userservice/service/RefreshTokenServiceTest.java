@@ -20,10 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,12 +66,12 @@ class RefreshTokenServiceTest {
                 .build();
     }
 
-    private LocalDateTime now() {
-        return LocalDateTime.ofInstant(FIXED_INSTANT, ZONE);
+    private OffsetDateTime now() {
+        return OffsetDateTime.ofInstant(FIXED_INSTANT, ZONE);
     }
 
     private RefreshToken buildToken(String clearToken, boolean revoked,
-                                    LocalDateTime expiresAt) {
+                                    OffsetDateTime expiresAt) {
         return RefreshToken.builder()
                 .id(1L)
                 .user(testUser)

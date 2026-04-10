@@ -16,9 +16,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -90,7 +88,7 @@ public class JwtService {
         } catch (JwtException e) {
             log.warn("Malformed/tampered JWT: {}", e.getMessage());
             return false;
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             log.warn("Empty or null JWT token");
             return false;
         }

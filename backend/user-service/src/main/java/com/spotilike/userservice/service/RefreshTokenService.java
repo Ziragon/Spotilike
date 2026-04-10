@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
@@ -69,7 +69,7 @@ public class RefreshTokenService {
                 .tokenHash(TokenHashUtil.hash(clearToken))
                 .ipAddress(ipAddress)
                 .deviceInfo(deviceInfo)
-                .expiresAt(LocalDateTime.now(clock)
+                .expiresAt(OffsetDateTime.now(clock)
                         .plus(refreshExpiration, ChronoUnit.MILLIS))
                 .revoked(false)
                 .build();
@@ -94,7 +94,7 @@ public class RefreshTokenService {
             throw new TokenRevokedException();
         }
 
-        if (token.getExpiresAt().isBefore(LocalDateTime.now(clock))) {
+        if (token.getExpiresAt().isBefore(OffsetDateTime.now(clock))) {
             log.info("Expired refresh token for user {}", userId);
             token.setRevoked(true);
             refreshTokenRepository.save(token);
