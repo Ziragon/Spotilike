@@ -66,3 +66,6 @@ Thumbs.db
 
 # Need for ci build
 !gradle/wrapper/gradle-wrapper.jar
+
+# mkcert keys
+/docker/certs/
