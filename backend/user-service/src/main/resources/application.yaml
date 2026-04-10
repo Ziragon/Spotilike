@@ -34,9 +34,8 @@ spring:
 server:
   port: ${SERVER_PORT:8081}
   shutdown: graceful
-
-openapi:
-  gateway-url: ${GATEWAY_URL:http://localhost:8000}
+  # Генерирование ссылки гейтвея через X-Forwarded- заголовок
+  forward-headers-strategy: framework
 
 application:
   security:
@@ -49,13 +48,6 @@ application:
 springdoc:
   api-docs:
     path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operations-sorter: method
-    tags-sorter: alpha
-    display-request-duration: true
-  default-consumes-media-type: application/json
-  default-produces-media-type: application/json
 
 logging:
   level:
