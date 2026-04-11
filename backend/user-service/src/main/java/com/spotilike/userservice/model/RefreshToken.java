@@ -38,9 +38,11 @@ public class RefreshToken {
     @Column(name = "expires_at", nullable = false)
     private OffsetDateTime expiresAt;
 
-    @Column(name = "is_revoked", nullable = false)
-    @Builder.Default
-    private boolean revoked = false;
+    @Column(name = "is_revoked")
+    private OffsetDateTime revoked;
+
+    @Column(name = "last_used_at")
+    private OffsetDateTime lastUsedAt;
 
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp
