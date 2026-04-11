@@ -1,7 +1,10 @@
 package com.spotilike.userservice.model;
 
+import com.spotilike.userservice.model.enums.RoleName;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -16,5 +19,17 @@ public class Role {
     private Long id;
 
     @Column(name = "name", nullable = false, unique = true)
-    private String name;
+    private RoleName name;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Role other)) return false;
+        return name != null && name.equals(other.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(name);
+    }
 }
