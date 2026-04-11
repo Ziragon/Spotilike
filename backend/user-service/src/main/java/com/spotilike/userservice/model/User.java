@@ -16,7 +16,7 @@ import java.util.Set;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"roles"})
+@ToString(exclude = {"roles", "refreshTokens"})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,6 +43,10 @@ public class User {
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private Set<RefreshToken> refreshTokens = new HashSet<>();
+
     @Column(name = "is_verified", nullable = false)
     @Builder.Default
     private boolean verified = false;
@@ -54,6 +58,9 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     @UpdateTimestamp
     private OffsetDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 
     @Override
     public boolean equals(Object o) {
