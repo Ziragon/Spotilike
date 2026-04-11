@@ -72,6 +72,26 @@ public class User {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    @Column(name = "blocked_until")
+    private OffsetDateTime blockedUntil;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public boolean isBlocked() {
+        return blockedUntil != null &&
+                OffsetDateTime.now().isBefore(blockedUntil);
+    }
+
+    public boolean isActive() {
+        return !isDeleted() && !isBlocked();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
