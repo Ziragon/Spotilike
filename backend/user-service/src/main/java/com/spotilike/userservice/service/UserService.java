@@ -50,7 +50,7 @@ public class UserService {
                 .build();
 
         try {
-            User saved = userRepository.save(user);
+            User saved = userRepository.saveAndFlush(user);
             log.info("User registered: id={}, email={}", saved.getId(), email);
             return saved;
         } catch (DataIntegrityViolationException _) { // Пользователь с таким email уже существует
