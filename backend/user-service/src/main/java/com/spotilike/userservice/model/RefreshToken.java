@@ -11,7 +11,12 @@ import java.time.OffsetDateTime;
 @Entity
 @Getter
 @Setter
-@Table(name = "tokens")
+@Table(name = "tokens", indexes = {
+        @Index(name = "idx_tokens_user_id", columnList = "user_id"),
+        @Index(name = "idx_tokens_expires_at", columnList = "expires_at"),
+        @Index(name = "idx_tokens_user_active",
+                columnList = "user_id, revoked_at, expires_at")
+})
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -38,8 +43,8 @@ public class RefreshToken {
     @Column(name = "expires_at", nullable = false)
     private OffsetDateTime expiresAt;
 
-    @Column(name = "is_revoked")
-    private OffsetDateTime revoked;
+    @Column(name = "revoked_at")
+    private OffsetDateTime revokedAt;
 
     @Column(name = "last_used_at")
     private OffsetDateTime lastUsedAt;

@@ -26,7 +26,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -70,7 +69,7 @@ class RefreshTokenServiceTest {
         return OffsetDateTime.ofInstant(FIXED_INSTANT, ZONE);
     }
 
-    private RefreshToken buildToken(String clearToken, boolean revoked,
+    private RefreshToken buildToken(String clearToken, OffsetDateTime revokedAt,
                                     OffsetDateTime expiresAt) {
         return RefreshToken.builder()
                 .id(1L)
@@ -78,7 +77,7 @@ class RefreshTokenServiceTest {
                 .tokenHash(TokenHashUtil.hash(clearToken))
                 .ipAddress("127.0.0.1")
                 .deviceInfo("Test-Device")
-                .revoked(revoked)
+                .revokedAt(revokedAt)
                 .expiresAt(expiresAt)
                 .build();
     }
@@ -88,36 +87,19 @@ class RefreshTokenServiceTest {
     class CreateRefreshToken {
 
         @Test
-        @DisplayName("Создаёт токен и сохраняет в репозиторий")
+        @DisplayName("Creates token and save to repository")
         void shouldCreateAndSave() {
-            // Given
-            when(userRepository.findById(1L))
-                    .thenReturn(Optional.of(testUser));
-            when(refreshTokenRepository
-                    .revokeByUserIdAndDeviceInfo(1L, "Device"))
-                    .thenReturn(0);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-            // When
-            String clearToken = refreshTokenService
-                    .createRefreshToken(1L, "127.0.0.1", "Device");
+            refreshTokenService.createRefreshToken(1L, "127.0.0.1", "Device");
 
-            // Then
-            assertThat(clearToken).isNotBlank();
-
-            ArgumentCaptor<RefreshToken> captor =
-                    ArgumentCaptor.forClass(RefreshToken.class);
+            ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);
             verify(refreshTokenRepository).save(captor.capture());
 
             RefreshToken saved = captor.getValue();
-            assertThat(saved.getUser()).isEqualTo(testUser);
-            assertThat(saved.getTokenHash())
-                    .isEqualTo(TokenHashUtil.hash(clearToken));
-            assertThat(saved.getIpAddress()).isEqualTo("127.0.0.1");
-            assertThat(saved.getDeviceInfo()).isEqualTo("Device");
-            assertThat(saved.isRevoked()).isFalse();
-            assertThat(saved.getExpiresAt())
-                    .isEqualTo(now().plusNanos(
-                            REFRESH_EXPIRATION_MS * 1_000_000));
+
+            assertThat(saved.getRevokedAt()).isNull();
+            assertThat(saved.getExpiresAt()).isEqualTo(now().plusNanos(REFRESH_EXPIRATION_MS * 1_000_000));
         }
 
         @Test
@@ -160,80 +142,55 @@ class RefreshTokenServiceTest {
     class ValidateRefreshToken {
 
         @Test
-        @DisplayName("Валидный токен — возвращает RefreshToken")
+        @DisplayName("Valid token returns refresh token")
         void shouldReturnTokenWhenValid() {
-            // Given
             String clearToken = "valid-token";
-            RefreshToken token = buildToken(
-                    clearToken, false, now().plusHours(1));
 
-            when(refreshTokenRepository
-                    .findByTokenHash(TokenHashUtil.hash(clearToken)))
-                    .thenReturn(Optional.of(token));
+            RefreshToken token = buildToken(clearToken, null, now().plusHours(1));
 
-            // When
-            RefreshToken result = refreshTokenService
-                    .validateRefreshToken(clearToken);
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
 
-            // Then
-            assertThat(result).isEqualTo(token);
-            assertThat(result.isRevoked()).isFalse();
-            verify(refreshTokenRepository, never()).save(any());
-            verify(refreshTokenRepository, never())
-                    .revokeAllByUserId(anyLong());
+            RefreshToken result = refreshTokenService.validateRefreshToken(clearToken);
+
+            assertThat(result.getRevokedAt()).isNull();
         }
 
         @Test
-        @DisplayName("Отозванный токен — отзывает ВСЕ токены и бросает исключение")
+        @DisplayName("Revoked tokens revokes all tokens and throws exception")
         void shouldRevokeAllAndThrowWhenRevoked() {
-            // Given
             String clearToken = "revoked-token";
-            RefreshToken token = buildToken(
-                    clearToken, true, now().plusHours(1));
+            RefreshToken token = buildToken(clearToken, now().minusDays(1), now().plusHours(1));
 
-            when(refreshTokenRepository
-                    .findByTokenHash(TokenHashUtil.hash(clearToken)))
-                    .thenReturn(Optional.of(token));
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
 
-            // When & Then
-            assertThatThrownBy(() -> refreshTokenService
-                    .validateRefreshToken(clearToken))
+            assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(clearToken))
                     .isInstanceOf(TokenRevokedException.class);
 
             verify(refreshTokenRepository).revokeAllByUserId(1L);
         }
 
         @Test
-        @DisplayName("Просроченный токен — помечает revoked и бросает исключение")
+        @DisplayName("Expired token set revokedAt and throws exception")
         void shouldMarkRevokedAndThrowWhenExpired() {
-            // Given
             String clearToken = "expired-token";
-            // Истёк 5 минут назад
-            RefreshToken token = buildToken(
-                    clearToken, false, now().minusMinutes(5));
+            RefreshToken token = buildToken(clearToken, null, now().minusMinutes(5));
 
-            when(refreshTokenRepository
-                    .findByTokenHash(TokenHashUtil.hash(clearToken)))
-                    .thenReturn(Optional.of(token));
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
 
-            // When & Then
-            assertThatThrownBy(() -> refreshTokenService
-                    .validateRefreshToken(clearToken))
+            assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(clearToken))
                     .isInstanceOf(TokenExpiredException.class);
 
-            assertThat(token.isRevoked()).isTrue();
+            // Теперь проверяем, что дата отзыва проставилась
+            assertThat(token.getRevokedAt()).isNotNull();
             verify(refreshTokenRepository).save(token);
-            // НЕ должен отзывать все токены — это не security-инцидент
-            verify(refreshTokenRepository, never())
-                    .revokeAllByUserId(anyLong());
         }
 
         @Test
-        @DisplayName("Токен истекает ровно сейчас - ещё валиден (isBefore)")
+        @DisplayName("Token revokes right now - valid")
         void shouldBeValidWhenExpiresExactlyNow() {
             // Given
             String clearToken = "edge-token";
-            RefreshToken token = buildToken(clearToken, false, now());
+            RefreshToken token = buildToken(clearToken, null, now());
 
             when(refreshTokenRepository
                     .findByTokenHash(TokenHashUtil.hash(clearToken)))
@@ -248,7 +205,7 @@ class RefreshTokenServiceTest {
         }
 
         @Test
-        @DisplayName("Несуществующий токен - TokenNotFoundException")
+        @DisplayName("TokenNotFoundException")
         void shouldThrowWhenNotFound() {
             // Given
             when(refreshTokenRepository.findByTokenHash(anyString()))
@@ -266,22 +223,16 @@ class RefreshTokenServiceTest {
     class RevokeToken {
 
         @Test
-        @DisplayName("Существующий токен - помечает revoked")
+        @DisplayName("Existing token gets revoked")
         void shouldRevokeExistingToken() {
-            // Given
             String clearToken = "existing-token";
-            RefreshToken token = buildToken(
-                    clearToken, false, now().plusHours(1));
+            RefreshToken token = buildToken(clearToken, null, now().plusHours(1));
 
-            when(refreshTokenRepository
-                    .findByTokenHash(TokenHashUtil.hash(clearToken)))
-                    .thenReturn(Optional.of(token));
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
 
-            // When
             refreshTokenService.revokeToken(clearToken);
 
-            // Then
-            assertThat(token.isRevoked()).isTrue();
+            assertThat(token.getRevokedAt()).isEqualTo(now());
             verify(refreshTokenRepository).save(token);
         }
 

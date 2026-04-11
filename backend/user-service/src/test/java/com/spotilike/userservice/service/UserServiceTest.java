@@ -5,6 +5,7 @@ import com.spotilike.userservice.exception.resource.RoleNotFoundException;
 import com.spotilike.userservice.exception.resource.UserNotFoundException;
 import com.spotilike.userservice.model.Role;
 import com.spotilike.userservice.model.User;
+import com.spotilike.userservice.model.enums.RoleName;
 import com.spotilike.userservice.repository.RoleRepository;
 import com.spotilike.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +43,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        defaultRole = Role.builder().id(1L).name("USER").build();
+        defaultRole = Role.builder().id(1L).name(RoleName.ROLE_USER).build();
     }
 
     @Nested
@@ -54,7 +55,7 @@ class UserServiceTest {
         void shouldCreateUser() {
 
             when(userRepository.existsByEmail("new@mail.com")).thenReturn(false);
-            when(roleRepository.findByName("USER"))
+            when(roleRepository.findByName(RoleName.ROLE_USER))
                     .thenReturn(Optional.of(defaultRole));
             when(passwordEncoder.encode("rawPass")).thenReturn("hashedPass");
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
@@ -94,7 +95,7 @@ class UserServiceTest {
         void shouldThrowWhenDefaultRoleMissing() {
 
             when(userRepository.existsByEmail("new@mail.com")).thenReturn(false);
-            when(roleRepository.findByName("USER")).thenReturn(Optional.empty());
+            when(roleRepository.findByName(RoleName.ROLE_USER)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() ->
                     userService.createUser("new@mail.com", "pass", "nick"))

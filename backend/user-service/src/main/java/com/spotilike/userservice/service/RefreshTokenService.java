@@ -71,7 +71,6 @@ public class RefreshTokenService {
                 .deviceInfo(deviceInfo)
                 .expiresAt(OffsetDateTime.now(clock)
                         .plus(refreshExpiration, ChronoUnit.MILLIS))
-                .revoked(false)
                 .build();
 
         refreshTokenRepository.save(refreshToken);
@@ -88,7 +87,7 @@ public class RefreshTokenService {
 
         Long userId = token.getUser().getId();
 
-        if (token.isRevoked()) {
+        if (token.getRevokedAt() != null) {
             log.warn("SECURITY: Revoked token reuse for user {}", userId);
             revokeAllTokens(userId);
             throw new TokenRevokedException();
@@ -96,7 +95,7 @@ public class RefreshTokenService {
 
         if (token.getExpiresAt().isBefore(OffsetDateTime.now(clock))) {
             log.info("Expired refresh token for user {}", userId);
-            token.setRevoked(true);
+            token.setRevokedAt(OffsetDateTime.now(clock));
             refreshTokenRepository.save(token);
             throw new TokenExpiredException("refresh");
         }
@@ -108,7 +107,7 @@ public class RefreshTokenService {
     public void revokeToken(String clearToken) {
         lookupByToken(clearToken).ifPresentOrElse(
                 token -> {
-                    token.setRevoked(true);
+                    token.setRevokedAt(OffsetDateTime.now(clock));
                     refreshTokenRepository.save(token);
                     log.info("Token revoked for user {}",
                             token.getUser().getId());

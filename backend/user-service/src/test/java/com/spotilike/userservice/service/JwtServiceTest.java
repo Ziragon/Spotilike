@@ -2,6 +2,7 @@ package com.spotilike.userservice.service;
 
 import com.spotilike.userservice.model.Role;
 import com.spotilike.userservice.model.User;
+import com.spotilike.userservice.model.enums.RoleName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ class JwtServiceTest {
                 .id(1L)
                 .username("testUser")
                 .email("test@mail.com")
-                .roles(Set.of(new Role(1L, "ROLE_USER")))
+                .roles(Set.of(new Role(1L, RoleName.ROLE_USER)))
                 .build();
 
         // When

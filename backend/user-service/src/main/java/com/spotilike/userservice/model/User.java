@@ -3,6 +3,7 @@ package com.spotilike.userservice.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
@@ -12,11 +13,16 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_users_email", columnList = "email"),
+        @Index(name = "idx_users_username", columnList = "username"),
+        @Index(name = "idx_users_deleted_at", columnList = "deleted_at")
+})
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = {"roles", "refreshTokens"})
+@SQLRestriction("deleted_at IS NULL")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,7 +44,11 @@ public class User {
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
+            inverseJoinColumns = @JoinColumn(name = "role_id"),
+            indexes = {
+                    @Index(name = "idx_user_roles_user_id", columnList = "user_id"),
+                    @Index(name = "idx_user_roles_role_id", columnList = "role_id")
+            }
     )
     @Builder.Default
     private Set<Role> roles = new HashSet<>();

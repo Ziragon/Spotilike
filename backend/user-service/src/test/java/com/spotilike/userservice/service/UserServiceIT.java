@@ -4,6 +4,7 @@ import com.spotilike.userservice.BaseIT;
 import com.spotilike.userservice.exception.resource.DuplicateEmailException;
 import com.spotilike.userservice.model.Role;
 import com.spotilike.userservice.model.User;
+import com.spotilike.userservice.model.enums.RoleName;
 import com.spotilike.userservice.repository.RoleRepository;
 import com.spotilike.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,7 @@ class UserServiceIT extends BaseIT {
 
     @BeforeEach
     void setUp() {
-        roleRepository.save(Role.builder().name("USER").build());
+        roleRepository.save(Role.builder().name(RoleName.ROLE_USER).build());
     }
 
     @Test
@@ -42,7 +43,7 @@ class UserServiceIT extends BaseIT {
         assertThat(fromDb.getEmail()).isEqualTo("test@mail.com");
         assertThat(fromDb.getPasswordHash()).isNotEqualTo("rawPass");
         assertThat(fromDb.getRoles()).extracting(Role::getName)
-                .containsExactly("USER");
+                .containsExactly(RoleName.ROLE_USER);
     }
 
     @Test
