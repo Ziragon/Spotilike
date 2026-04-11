@@ -10,6 +10,7 @@ import com.spotilike.userservice.repository.RoleRepository;
 import com.spotilike.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,11 +32,6 @@ public class UserService {
                            String rawPassword,
                            String username) {
 
-        if (userRepository.existsByEmail(email)) {
-            log.warn("Duplicate registration attempt: email={}", email);
-            throw new DuplicateEmailException();
-        }
-
         Role defaultRole = roleRepository.findByName(RoleName.ROLE_USER)
                 .orElseThrow(() -> {
                     log.error("Default role ROLE_USER is missing in DB!");
@@ -50,9 +46,14 @@ public class UserService {
                 .verified(false)
                 .build();
 
-        User saved = userRepository.save(user);
-        log.info("User registered: id={}, email={}", saved.getId(), email);
-        return saved;
+        try {
+            User saved = userRepository.save(user);
+            log.info("User registered: id={}, email={}", saved.getId(), email);
+            return saved;
+        } catch (DataIntegrityViolationException _) { // Пользователь с таким email уже существует
+            log.warn("Duplicate registration attempt: email={}", email);
+            throw new DuplicateEmailException();
+        }
     }
 
     @Transactional
@@ -94,5 +95,4 @@ public class UserService {
                             "User not found with email: " + email);
                 });
     }
-
 }
