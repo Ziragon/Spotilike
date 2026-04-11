@@ -7,6 +7,7 @@ import com.spotilike.userservice.model.User;
 import com.spotilike.userservice.model.enums.RoleName;
 import com.spotilike.userservice.repository.RoleRepository;
 import com.spotilike.userservice.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Transactional
 class UserServiceIT extends BaseIT {
 
     @Autowired
@@ -30,11 +30,19 @@ class UserServiceIT extends BaseIT {
 
     @BeforeEach
     void setUp() {
-        roleRepository.save(Role.builder().name(RoleName.ROLE_USER).build());
+        roleRepository.findByName(RoleName.ROLE_USER)
+                .orElseGet(() -> roleRepository.save(
+                        Role.builder().name(RoleName.ROLE_USER).build()));
+    }
+
+    @AfterEach
+    void cleanUp() {
+        userRepository.deleteAll();
     }
 
     @Test
-    @DisplayName("Пользователь сохраняется в БД с ролью и хешированным паролем")
+    @DisplayName("The user is saved correctly in the database")
+    @Transactional
     void shouldPersistUserWithRoleAndHashedPassword() {
         User user = userService.createUser("test@mail.com", "rawPass", "nick");
 
@@ -47,7 +55,7 @@ class UserServiceIT extends BaseIT {
     }
 
     @Test
-    @DisplayName("Дубликат email — constraint работает на уровне БД")
+    @DisplayName("Duplicate email")
     void shouldRejectDuplicateEmailInDatabase() {
         userService.createUser("dup@mail.com", "pass1", "nick1");
 
@@ -57,11 +65,12 @@ class UserServiceIT extends BaseIT {
     }
 
     @Test
-    @DisplayName("updateProfile сохраняет изменения в БД")
+    @DisplayName("updateProfile saves changes to database")
+    @Transactional
     void shouldPersistProfileChanges() {
         User user = userService.createUser("u@mail.com", "pass", "oldName");
 
-        userService.updateProfile(user.getId(), "newName", "newAvatar");
+        userService.updateProfile(user.getId(), "newName", "newAvatar", 0L);
 
         User fromDb = userRepository.findById(user.getId()).orElseThrow();
         assertThat(fromDb.getUsername()).isEqualTo("newName");

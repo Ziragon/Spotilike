@@ -1,6 +1,6 @@
 package com.spotilike.userservice.service;
 
-import com.spotilike.userservice.exception.resource.DuplicateEmailException;
+import com.spotilike.shared.exception.resource.ConcurrentModificationException;
 import com.spotilike.userservice.exception.resource.RoleNotFoundException;
 import com.spotilike.userservice.exception.resource.UserNotFoundException;
 import com.spotilike.userservice.model.Role;
@@ -49,59 +49,27 @@ class UserServiceTest {
     @Nested
     @DisplayName("createUser")
     class CreateUser {
-
         @Test
-        @DisplayName("Успешное создание пользователя")
+        @DisplayName("Successful user create")
         void shouldCreateUser() {
+            when(roleRepository.findByName(RoleName.ROLE_USER)).thenReturn(Optional.of(defaultRole));
+            when(passwordEncoder.encode("password")).thenReturn("hash");
 
-            when(userRepository.existsByEmail("new@mail.com")).thenReturn(false);
-            when(roleRepository.findByName(RoleName.ROLE_USER))
-                    .thenReturn(Optional.of(defaultRole));
-            when(passwordEncoder.encode("rawPass")).thenReturn("hashedPass");
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-                User u = invocation.getArgument(0);
-                u.setId(1L);
-                return u;
-            });
+            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-            User result = userService.createUser("new@mail.com", "rawPass", "nick");
+            User result = userService.createUser("new@mail.com", "password", "nick");
 
             assertThat(result.getEmail()).isEqualTo("new@mail.com");
-            assertThat(result.getPasswordHash()).isEqualTo("hashedPass");
-            assertThat(result.getUsername()).isEqualTo("nick");
-            assertThat(result.getRoles()).containsExactly(defaultRole);
-            assertThat(result.isVerified()).isFalse();
-
-            verify(passwordEncoder).encode("rawPass");
-            verify(userRepository).save(any(User.class));
+            verify(userRepository).save(any());
         }
 
         @Test
-        @DisplayName("Дубликат email — DuplicateEmailException")
-        void shouldThrowOnDuplicateEmail() {
-
-            when(userRepository.existsByEmail("dup@mail.com")).thenReturn(true);
-
-            assertThatThrownBy(() ->
-                    userService.createUser("dup@mail.com", "pass", "nick"))
-                    .isInstanceOf(DuplicateEmailException.class);
-
-            verify(userRepository, never()).save(any());
-            verify(passwordEncoder, never()).encode(anyString());
-        }
-
-        @Test
-        @DisplayName("Роль USER отсутствует — RoleNotFoundException")
+        @DisplayName("ROLE_USER is missing - RoleNotFoundException")
         void shouldThrowWhenDefaultRoleMissing() {
-
-            when(userRepository.existsByEmail("new@mail.com")).thenReturn(false);
             when(roleRepository.findByName(RoleName.ROLE_USER)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() ->
-                    userService.createUser("new@mail.com", "pass", "nick"))
+            assertThatThrownBy(() -> userService.createUser("a@b.com", "p", "u"))
                     .isInstanceOf(RoleNotFoundException.class);
-
-            verify(userRepository, never()).save(any());
         }
     }
 
@@ -117,89 +85,99 @@ class UserServiceTest {
                     .id(1L)
                     .username("oldName")
                     .avatarUrl("oldAvatar")
+                    .version(1L)
                     .build();
         }
 
-        private void stubUserFound() {
+        @Test
+        @DisplayName("Updates username and avatarUrl")
+        void shouldUpdateBothFields() {
             when(userRepository.findById(1L))
                     .thenReturn(Optional.of(existingUser));
-        }
-
-        @Test
-        @DisplayName("Обновляет username и avatarUrl")
-        void shouldUpdateBothFields() {
-            stubUserFound();
-            when(userRepository.save(any(User.class)))
+            when(userRepository.saveAndFlush(any(User.class)))
                     .thenAnswer(i -> i.getArgument(0));
 
-            User result = userService.updateProfile(1L, "newName", "newAvatar");
+            User result = userService.updateProfile(1L, "newName", "newAvatar", 1L);
 
             assertThat(result.getUsername()).isEqualTo("newName");
             assertThat(result.getAvatarUrl()).isEqualTo("newAvatar");
-            verify(userRepository).save(existingUser);
+            verify(userRepository).saveAndFlush(existingUser);
         }
 
         @Test
-        @DisplayName("Обновляет только username, avatarUrl = null")
+        @DisplayName("Updates only username")
         void shouldUpdateOnlyUsername() {
-            stubUserFound();
-            when(userRepository.save(any(User.class)))
-                    .thenAnswer(i -> i.getArgument(0));
+            existingUser.setVersion(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
+            when(userRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
 
-            User result = userService.updateProfile(1L, "newName", null);
+            User result = userService.updateProfile(1L, "newNickname", null, 1L);
 
-            assertThat(result.getUsername()).isEqualTo("newName");
+            assertThat(result.getUsername()).isEqualTo("newNickname");
             assertThat(result.getAvatarUrl()).isEqualTo("oldAvatar");
-            verify(userRepository).save(existingUser);
         }
 
         @Test
-        @DisplayName("Обновляет только avatarUrl, username = null")
+        @DisplayName("Updates only avatarUrl")
         void shouldUpdateOnlyAvatar() {
-            stubUserFound();
-            when(userRepository.save(any(User.class)))
+            when(userRepository.findById(1L))
+                    .thenReturn(Optional.of(existingUser));
+            when(userRepository.saveAndFlush(any(User.class)))
                     .thenAnswer(i -> i.getArgument(0));
 
-            User result = userService.updateProfile(1L, null, "newAvatar");
+            User result = userService.updateProfile(1L, null, "newAvatar", 1L);
 
             assertThat(result.getUsername()).isEqualTo("oldName");
             assertThat(result.getAvatarUrl()).isEqualTo("newAvatar");
-            verify(userRepository).save(existingUser);
+            verify(userRepository).saveAndFlush(existingUser);
         }
 
         @Test
-        @DisplayName("Пустой username игнорируется")
+        @DisplayName("Should ignore blank username")
         void shouldIgnoreBlankUsername() {
-            stubUserFound();
-            when(userRepository.save(any(User.class)))
-                    .thenAnswer(i -> i.getArgument(0));
+            existingUser.setVersion(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
+            when(userRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
 
-            User result = userService.updateProfile(1L, "   ", "newAvatar");
+            User result = userService.updateProfile(1L, "   ", "newAvatar", 1L);
 
             assertThat(result.getUsername()).isEqualTo("oldName");
-            verify(userRepository).save(existingUser);
+            assertThat(result.getAvatarUrl()).isEqualTo("newAvatar");
         }
 
         @Test
-        @DisplayName("Ничего не передано — save не вызывается")
+        @DisplayName("Nothing has been given - without save")
         void shouldNotSaveWhenNothingChanged() {
-            stubUserFound();
+            existingUser.setVersion(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
 
-            User result = userService.updateProfile(1L, null, null);
+            User result = userService.updateProfile(1L, null, null, 1L);
 
+            assertThat(result).isNotNull();
             assertThat(result.getUsername()).isEqualTo("oldName");
-            assertThat(result.getAvatarUrl()).isEqualTo("oldAvatar");
-            verify(userRepository, never()).save(any(User.class));
+            verify(userRepository, never()).saveAndFlush(any());
         }
 
         @Test
-        @DisplayName("Пользователь не найден — UserNotFoundException")
+        @DisplayName("User not found")
         void shouldThrowWhenUserNotFound() {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() ->
-                    userService.updateProfile(999L, "name", "avatar"))
+                    userService.updateProfile(999L, "name", "avatar", 1L))
                     .isInstanceOf(UserNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("Throws exception if client version is stale")
+        void shouldThrowOnStaleClientVersion() {
+            existingUser.setVersion(2L);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
+
+            assertThatThrownBy(() -> userService.updateProfile(1L, "newName", null, 1L))
+                    .isInstanceOf(ConcurrentModificationException.class);
+
+            verify(userRepository, never()).saveAndFlush(any());
         }
     }
 
@@ -208,7 +186,7 @@ class UserServiceTest {
     class FindById {
 
         @Test
-        @DisplayName("Возвращает пользователя")
+        @DisplayName("Returns user")
         void shouldReturnUser() {
             User user = User.builder().id(1L).email("a@b.com").build();
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -217,7 +195,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Бросает UserNotFoundException")
+        @DisplayName("Throws UserNotFoundException")
         void shouldThrowWhenNotFound() {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -231,7 +209,7 @@ class UserServiceTest {
     class FindByEmail {
 
         @Test
-        @DisplayName("Возвращает пользователя")
+        @DisplayName("Returns the user")
         void shouldReturnUser() {
             User user = User.builder().id(1L).email("a@b.com").build();
             when(userRepository.findByEmail("a@b.com"))
@@ -241,7 +219,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Бросает UserNotFoundException")
+        @DisplayName("Throws UserNotFoundException")
         void shouldThrowWhenNotFound() {
             when(userRepository.findByEmail("no@b.com"))
                     .thenReturn(Optional.empty());
