@@ -19,6 +19,7 @@ public class Role {
     private Long id;
 
     @Column(name = "name", nullable = false, unique = true)
+    @Enumerated(EnumType.STRING)
     private RoleName name;
 
     @Override

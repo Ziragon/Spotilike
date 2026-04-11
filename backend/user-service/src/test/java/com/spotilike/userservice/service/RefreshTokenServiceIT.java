@@ -60,7 +60,7 @@ class RefreshTokenServiceIT extends BaseIT {
 
         RefreshToken old = refreshTokenService
                 .findByToken(oldToken).orElseThrow();
-        assertThat(old.isRevoked()).isTrue();
+        assertThat(old.getRevokedAt()).isNotNull();
     }
 
     @Test
@@ -75,10 +75,10 @@ class RefreshTokenServiceIT extends BaseIT {
 
         assertThat(refreshTokenService.findByToken(t1)
                 .orElseThrow(() -> new AssertionError("Token t1 not found"))
-                .isRevoked()).isTrue();
+                .getRevokedAt()).isNotNull();
 
         assertThat(refreshTokenService.findByToken(t2)
                 .orElseThrow(() -> new AssertionError("Token t2 not found"))
-                .isRevoked()).isTrue();
+                .getRevokedAt()).isNotNull();
     }
 }

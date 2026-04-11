@@ -5,6 +5,7 @@ import com.spotilike.userservice.exception.resource.RoleNotFoundException;
 import com.spotilike.userservice.exception.resource.UserNotFoundException;
 import com.spotilike.userservice.model.Role;
 import com.spotilike.userservice.model.User;
+import com.spotilike.userservice.model.enums.RoleName;
 import com.spotilike.userservice.repository.RoleRepository;
 import com.spotilike.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,10 +36,10 @@ public class UserService {
             throw new DuplicateEmailException();
         }
 
-        Role defaultRole = roleRepository.findByName("USER")
+        Role defaultRole = roleRepository.findByName(RoleName.ROLE_USER)
                 .orElseThrow(() -> {
-                    log.error("Default role USER is missing in DB!");
-                    return new RoleNotFoundException("USER");
+                    log.error("Default role ROLE_USER is missing in DB!");
+                    return new RoleNotFoundException(RoleName.ROLE_USER);
                 });
 
         User user = User.builder()
