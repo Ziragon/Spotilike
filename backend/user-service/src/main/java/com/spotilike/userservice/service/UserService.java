@@ -1,5 +1,6 @@
 package com.spotilike.userservice.service;
 
+import com.spotilike.shared.exception.resource.ConcurrentModificationException;
 import com.spotilike.userservice.exception.resource.DuplicateEmailException;
 import com.spotilike.userservice.exception.resource.RoleNotFoundException;
 import com.spotilike.userservice.exception.resource.UserNotFoundException;
@@ -11,11 +12,13 @@ import com.spotilike.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -57,26 +60,39 @@ public class UserService {
     }
 
     @Transactional
-    public User updateProfile(Long userId,
-                              String newUsername,
-                              String newAvatarUrl) {
-
+    public User updateProfile(Long userId, String newUsername, String newAvatarUrl, Long clientVersion) {
         User user = findById(userId);
-        boolean changed = false;
 
-        if (newUsername != null && !newUsername.isBlank()) {
+        // 1. Проверка версии (Optimistic Lock на уровне бизнес-логики)
+        if (!Objects.equals(user.getVersion(), clientVersion)) {
+            log.warn("Stale data update attempt for user {}. Expected version {}, got {}",
+                    userId, user.getVersion(), clientVersion);
+            throw new ConcurrentModificationException("User", userId);
+        }
+
+        boolean isChanged = false;
+
+        if (newUsername != null && !newUsername.isBlank() && !newUsername.equals(user.getUsername())) {
             user.setUsername(newUsername);
-            changed = true;
+            isChanged = true;
         }
-        if (newAvatarUrl != null) {
+
+        if (newAvatarUrl != null && !newAvatarUrl.equals(user.getAvatarUrl())) {
             user.setAvatarUrl(newAvatarUrl);
-            changed = true;
+            isChanged = true;
         }
-        if (changed) {
-            user = userRepository.save(user);
-            log.info("Profile updated: userId={}", userId);
+
+        // Не обращаемся к бд если изменений нет
+        if (!isChanged) {
+            return user;
         }
-        return user;
+
+        try {
+            return userRepository.saveAndFlush(user);
+        } catch (ObjectOptimisticLockingFailureException _) {
+            log.warn("Concurrent update detected for user {}", userId);
+            throw new ConcurrentModificationException("User", userId);
+        }
     }
 
     public User findById(Long id) {
