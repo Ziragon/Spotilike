@@ -1,6 +1,7 @@
 package com.spotilike.userservice.service;
 
 import com.spotilike.userservice.dto.response.AuthResponse;
+import com.spotilike.userservice.dto.response.UserDto;
 import com.spotilike.userservice.exception.auth.InvalidCredentialsException;
 import com.spotilike.userservice.model.User;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,12 @@ public class AuthService {
         String refreshToken = refreshTokenService
                 .createRefreshToken(user.getId(), ip, device);
 
-        return new AuthResponse(accessToken, refreshToken);
+        return new AuthResponse(
+                accessToken,
+                refreshToken,
+                jwtService.getExpirationTime(),
+                UserDto.from(user)
+        );
     }
 
     @Transactional
@@ -51,6 +57,11 @@ public class AuthService {
         String refreshToken = refreshTokenService
                 .createRefreshToken(user.getId(), ip, device);
 
-        return new AuthResponse(accessToken, refreshToken);
+        return new AuthResponse(
+                accessToken,
+                refreshToken,
+                jwtService.getExpirationTime(),
+                UserDto.from(user)
+        );
     }
 }

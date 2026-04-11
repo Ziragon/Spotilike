@@ -99,6 +99,10 @@ public class JwtService {
                 .before(new Date());
     }
 
+    public long getExpirationTime() {
+        return jwtExpiration;
+    }
+
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(signingKey)

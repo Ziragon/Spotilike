@@ -6,6 +6,10 @@ import com.spotilike.userservice.dto.response.AuthResponse;
 import com.spotilike.shared.security.UserPrincipal;
 import com.spotilike.userservice.service.AuthService;
 import com.spotilike.userservice.util.RequestUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +23,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Authentication", description = "Эндпоинты для регистрации и логина")
 public class AuthController {
 
     private final AuthService authService;
 
+    @Operation(summary = "Регистрация нового пользователя", description = "Создает аккаунт и возвращает пару токенов")
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
             @Valid @RequestBody RegisterRequest req,
@@ -41,6 +47,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "Вход в систему", description = "Аутентификация по email и паролю")
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
             @Valid @RequestBody LoginRequest req,
