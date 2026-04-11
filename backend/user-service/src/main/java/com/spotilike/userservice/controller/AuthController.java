@@ -7,8 +7,6 @@ import com.spotilike.shared.security.UserPrincipal;
 import com.spotilike.userservice.service.AuthService;
 import com.spotilike.userservice.util.RequestUtil;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
