@@ -23,7 +23,12 @@ import java.time.OffsetDateTime;
 @ToString(exclude = {"user"})
 public class RefreshToken {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tokens_id_seq")
+    @SequenceGenerator(
+            name = "tokens_id_seq",
+            sequenceName = "tokens_id_seq",
+            allocationSize = 50
+    )
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
