@@ -80,7 +80,8 @@ public class RefreshTokenService {
 
         if (oldToken.getRevokedAt() != null) {
             log.warn("SECURITY: Attempt to use revoked token. Revoking family {}", familyId);
-            refreshTokenRepository.revokeByFamilyId(familyId);
+            int revoked = refreshTokenRepository.revokeByFamilyId(familyId);
+            log.warn("SECURITY: Revoked {} tokens in family {}", revoked, familyId);
             throw new TokenRevokedException();
         }
 
@@ -98,7 +99,8 @@ public class RefreshTokenService {
                 log.info("Grace period active for token family {}", familyId);
             } else {
                 log.warn("SECURITY: Token reuse detected! Revoking family {}", familyId);
-                refreshTokenRepository.revokeByFamilyId(familyId);
+                int revoked = refreshTokenRepository.revokeByFamilyId(familyId);
+                log.warn("SECURITY: Revoked {} tokens in family {}", revoked, familyId);
                 throw new TokenRevokedException();
             }
         } else {
