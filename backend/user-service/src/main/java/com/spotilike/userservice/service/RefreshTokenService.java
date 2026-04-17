@@ -12,6 +12,7 @@ import com.spotilike.userservice.util.TokenHashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,21 +74,10 @@ public class RefreshTokenService {
 
     @Transactional
     public String rotateRefreshToken(String clearToken, String ipAddress, String deviceInfo) {
-        RefreshToken oldToken = lookupByToken(clearToken)
-                .orElseThrow(TokenNotFoundException::new);
+
+        RefreshToken oldToken = validateRefreshToken(null, clearToken);
 
         UUID familyId = oldToken.getFamilyId();
-
-        if (oldToken.getRevokedAt() != null) {
-            log.warn("SECURITY: Attempt to use revoked token. Revoking family {}", familyId);
-            int revoked = refreshTokenRepository.revokeByFamilyId(familyId);
-            log.warn("SECURITY: Revoked {} tokens in family {}", revoked, familyId);
-            throw new TokenRevokedException();
-        }
-
-        if (oldToken.getExpiresAt().isBefore(OffsetDateTime.now(clock))) {
-            throw new TokenExpiredException("refresh");
-        }
 
         // Reuse detection / Grace period
         if (oldToken.getConsumedAt() != null) {
@@ -95,16 +85,19 @@ public class RefreshTokenService {
                     oldToken.getConsumedAt(), OffsetDateTime.now(clock));
 
             if (secondsSinceConsumed <= gracePeriodSeconds) {
-                // Grace period активен
+                // Здесь допускается создание нескольких токенов в течение Grace периода
+                // Это не является ошибкой, времени на получение токена у злоумышленника крайне малое
+                // Такая условность направлена на улучшение UX
                 log.info("Grace period active for token family {}", familyId);
             } else {
+                // Grace Period закончился
                 log.warn("SECURITY: Token reuse detected! Revoking family {}", familyId);
                 int revoked = refreshTokenRepository.revokeByFamilyId(familyId);
-                log.warn("SECURITY: Revoked {} tokens in family {}", revoked, familyId);
+                log.warn("SECURITY: Reused token - Revoked {} tokens in family {}", revoked, familyId);
                 throw new TokenRevokedException();
             }
         } else {
-            // Токен использован
+            // Пометка, что токен использован
             oldToken.setConsumedAt(OffsetDateTime.now(clock));
             refreshTokenRepository.save(oldToken);
         }
@@ -124,26 +117,28 @@ public class RefreshTokenService {
         return newClearToken;
     }
 
-    @Transactional
-    public RefreshToken validateRefreshToken(String clearToken) {
+    public RefreshToken validateRefreshToken(Long userId, String clearToken) {
         RefreshToken token = lookupByToken(clearToken)
                 .orElseThrow(() -> {
                     log.warn("Refresh token not found");
                     return new TokenNotFoundException();
                 });
 
-        Long userId = token.getUser().getId();
+        if (userId != null && !token.getUser().getId().equals(userId)) {
+            log.warn("SECURITY: User {} tried to revoke sessions for token belonging to user {}",
+                    userId, token.getUser().getId());
+            throw new AccessDeniedException("You don't have permission to manage this session");
+        }
 
         if (token.getRevokedAt() != null) {
-            log.warn("SECURITY: Revoked token reuse for user {}", userId);
-            revokeAllTokens(userId);
+            log.warn("SECURITY: Attempt to use revoked token. Revoking family {}", token.getFamilyId());
+            int revoked = refreshTokenRepository.revokeByFamilyId(token.getFamilyId());
+            log.warn("SECURITY: Revoked token use - Revoked {} tokens in family {}", revoked, token.getFamilyId());
             throw new TokenRevokedException();
         }
 
         if (token.getExpiresAt().isBefore(OffsetDateTime.now(clock))) {
-            log.info("Expired refresh token for user {}", userId);
-            token.setRevokedAt(OffsetDateTime.now(clock));
-            refreshTokenRepository.save(token);
+            log.info("Expired refresh token for user {}", token.getUser().getId());
             throw new TokenExpiredException("refresh");
         }
 
@@ -168,6 +163,13 @@ public class RefreshTokenService {
         revokeAllTokens(userId);
     }
 
+    @Transactional
+    public void revokeAllOthers(Long userId, String refreshToken) {
+        RefreshToken token = validateRefreshToken(userId, refreshToken);
+        int count = refreshTokenRepository.revokeAllOthers(userId, token.getTokenHash());
+        log.info("Revoke others: Revoked {} token(s) for user {}", count, userId);
+    }
+
     private Optional<RefreshToken> lookupByToken(String clearToken) {
         return refreshTokenRepository
                 .findByTokenHash(TokenHashUtil.hash(clearToken));
@@ -175,6 +177,6 @@ public class RefreshTokenService {
 
     private void revokeAllTokens(Long userId) {
         int count = refreshTokenRepository.revokeAllByUserId(userId);
-        log.info("Revoked {} token(s) for user {}", count, userId);
+        log.info("Revoke all: Revoked {} token(s) for user {}", count, userId);
     }
 }

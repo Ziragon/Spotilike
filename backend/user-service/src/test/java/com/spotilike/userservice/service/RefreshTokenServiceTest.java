@@ -148,7 +148,7 @@ class RefreshTokenServiceTest {
 
             when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
 
-            RefreshToken result = refreshTokenService.validateRefreshToken(clearToken);
+            RefreshToken result = refreshTokenService.validateRefreshToken(null, clearToken);
 
             assertThat(result.getRevokedAt()).isNull();
         }
@@ -161,26 +161,20 @@ class RefreshTokenServiceTest {
 
             when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
 
-            assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(clearToken))
+            assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(null, clearToken))
                     .isInstanceOf(TokenRevokedException.class);
-
-            verify(refreshTokenRepository).revokeAllByUserId(1L);
         }
 
         @Test
-        @DisplayName("Expired token set revokedAt and throws exception")
+        @DisplayName("Expired token throws exception")
         void shouldMarkRevokedAndThrowWhenExpired() {
             String clearToken = "expired-token";
             RefreshToken token = buildToken(clearToken, null, now().minusMinutes(5));
 
             when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(token));
 
-            assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(clearToken))
+            assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(null, clearToken))
                     .isInstanceOf(TokenExpiredException.class);
-
-            // Теперь проверяем, что дата отзыва проставилась
-            assertThat(token.getRevokedAt()).isNotNull();
-            verify(refreshTokenRepository).save(token);
         }
 
         @Test
@@ -196,7 +190,7 @@ class RefreshTokenServiceTest {
 
             // When
             RefreshToken result = refreshTokenService
-                    .validateRefreshToken(clearToken);
+                    .validateRefreshToken(null, clearToken);
 
             // Then
             assertThat(result).isEqualTo(token);
@@ -211,7 +205,7 @@ class RefreshTokenServiceTest {
 
             // When & Then
             assertThatThrownBy(() -> refreshTokenService
-                    .validateRefreshToken("unknown-token"))
+                    .validateRefreshToken(null, "unknown-token"))
                     .isInstanceOf(TokenNotFoundException.class);
         }
     }

@@ -84,6 +84,49 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Выход с аккаунта", description = "Выход с аккаунта и отзыв текущего токена")
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @Valid @RequestBody RefreshRequest req,
+            HttpServletRequest httpReq
+    ) {
+        log.info("Logout attempt: ip={}, device={}",
+                RequestUtil.extractClientIp(httpReq), RequestUtil.extractDeviceInfo(httpReq));
+
+        authService.logout(req.refreshToken());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Закрытие всех сессий", description = "Выход с аккаунта и отзыв всех токенов пользователя")
+    @PostMapping("/logout-all")
+    public ResponseEntity<Void> logoutAll(
+            @AuthenticationPrincipal UserPrincipal principal,
+            HttpServletRequest httpReq
+    ) {
+        log.info("Logout all attempt: user={}, ip={}, device={}",
+                principal.userId(), RequestUtil.extractClientIp(httpReq), RequestUtil.extractDeviceInfo(httpReq));
+
+        authService.logoutAll(principal.userId().longValue());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Закрытие всех сессий кроме текущей", description = "Отзыв всех токенов кроме текущего")
+    @PostMapping("/logout-others")
+    public ResponseEntity<Void> logoutOthers(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestBody RefreshRequest req,
+            HttpServletRequest httpReq
+    ) {
+        log.info("Logout others attempt: user={}, ip={}, device={}",
+                principal.userId(), RequestUtil.extractClientIp(httpReq), RequestUtil.extractDeviceInfo(httpReq));
+
+        authService.logoutOthers(principal.userId().longValue(), req.refreshToken());
+
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/test")
     public ResponseEntity<String> hello(@AuthenticationPrincipal UserPrincipal principal) {
 
