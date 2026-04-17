@@ -85,4 +85,19 @@ public class AuthService {
                 UserDto.from(user)
         );
     }
+
+    @Transactional
+    public void logout(String refreshToken) {
+        refreshTokenService.revokeToken(refreshToken);
+    }
+
+    @Transactional
+    public void logoutAll(Long userId) {
+        refreshTokenService.revokeAllUserTokens(userId);
+    }
+
+    @Transactional
+    public void logoutOthers(Long userId, String refreshToken) {
+        refreshTokenService.revokeAllOthers(userId, refreshToken);
+    }
 }
