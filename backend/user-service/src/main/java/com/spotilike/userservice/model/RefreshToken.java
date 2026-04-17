@@ -7,6 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -14,6 +15,7 @@ import java.time.OffsetDateTime;
 @Table(name = "tokens", indexes = {
         @Index(name = "idx_tokens_user_id", columnList = "user_id"),
         @Index(name = "idx_tokens_expires_at", columnList = "expires_at"),
+        @Index(name = "idx_tokens_family_id", columnList = "family_id"),
         @Index(name = "idx_tokens_user_active",
                 columnList = "user_id, revoked_at, expires_at")
 })
@@ -54,9 +56,19 @@ public class RefreshToken {
     @Column(name = "last_used_at")
     private OffsetDateTime lastUsedAt;
 
+    @Column(name = "consumed_at")
+    private OffsetDateTime consumedAt; // Показывает, когда токен был использован для ротации
+
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp
     private OffsetDateTime createdAt;
+
+    @Column(name = "family_id", nullable = false)
+    private UUID familyId;
+
+    public boolean isConsumed() {
+        return consumedAt != null;
+    }
 
     @Override
     public boolean equals(Object o) {
