@@ -45,6 +45,7 @@ application:
       expiration: 900000 # 15 минут
       refresh-token:
         expiration: 604800000 # 7 дней
+        grace-period-seconds: 30
 
 springdoc:
   api-docs:
