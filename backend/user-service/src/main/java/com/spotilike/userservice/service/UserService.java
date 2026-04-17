@@ -107,8 +107,7 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> {
                     log.warn("User not found: email={}", email);
-                    return new UserNotFoundException(
-                            "User not found with email: " + email);
+                    return new UserNotFoundException(email);
                 });
     }
 }

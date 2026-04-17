@@ -1,6 +1,7 @@
 package com.spotilike.userservice.controller;
 
 import com.spotilike.userservice.dto.request.LoginRequest;
+import com.spotilike.userservice.dto.request.RefreshRequest;
 import com.spotilike.userservice.dto.request.RegisterRequest;
 import com.spotilike.userservice.dto.response.AuthResponse;
 import com.spotilike.shared.security.UserPrincipal;
@@ -32,7 +33,8 @@ public class AuthController {
             @Valid @RequestBody RegisterRequest req,
             HttpServletRequest httpReq
     ) {
-        log.info("Registration attempt: email={}", req.email());
+        log.info("Registration attempt: email={}, ip={}, device={}",
+                req.email(), RequestUtil.extractClientIp(httpReq), RequestUtil.extractDeviceInfo(httpReq));
 
         AuthResponse response = authService.register(
                 req.email(),
@@ -51,11 +53,30 @@ public class AuthController {
             @Valid @RequestBody LoginRequest req,
             HttpServletRequest httpReq
     ) {
-        log.info("Login attempt: email={}", req.email());
+        log.info("Login attempt: email={}, ip={}, device={}",
+                req.email(), RequestUtil.extractClientIp(httpReq), RequestUtil.extractDeviceInfo(httpReq));
 
         AuthResponse response = authService.login(
                 req.email(),
                 req.password(),
+                RequestUtil.extractClientIp(httpReq),
+                RequestUtil.extractDeviceInfo(httpReq)
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Ротация токенов", description = "Получение новых refresh и access токенов")
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(
+            @Valid @RequestBody RefreshRequest req,
+            HttpServletRequest httpReq
+    ) {
+        log.info("Token rotation attempt: ip={}, device={}",
+                RequestUtil.extractClientIp(httpReq), RequestUtil.extractDeviceInfo(httpReq));
+
+        AuthResponse response = authService.refreshToken(
+                req.refreshToken(),
                 RequestUtil.extractClientIp(httpReq),
                 RequestUtil.extractDeviceInfo(httpReq)
         );
