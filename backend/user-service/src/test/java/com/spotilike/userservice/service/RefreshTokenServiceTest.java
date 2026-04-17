@@ -27,9 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RefreshTokenServiceTest {
@@ -55,8 +53,8 @@ class RefreshTokenServiceTest {
         // Фиксированные часы
         Clock fixedClock = Clock.fixed(FIXED_INSTANT, ZONE);
         ReflectionTestUtils.setField(refreshTokenService, "clock", fixedClock);
-        ReflectionTestUtils.setField(refreshTokenService,
-                "refreshExpiration", REFRESH_EXPIRATION_MS);
+        ReflectionTestUtils.setField(refreshTokenService, "refreshExpiration", REFRESH_EXPIRATION_MS);
+        ReflectionTestUtils.setField(refreshTokenService, "gracePeriodSeconds", 30L);
 
         testUser = User.builder()
                 .id(1L)
@@ -69,11 +67,11 @@ class RefreshTokenServiceTest {
         return OffsetDateTime.ofInstant(FIXED_INSTANT, ZONE);
     }
 
-    private RefreshToken buildToken(String clearToken, OffsetDateTime revokedAt,
-                                    OffsetDateTime expiresAt) {
+    private RefreshToken buildToken(String clearToken, OffsetDateTime revokedAt, OffsetDateTime expiresAt) {
         return RefreshToken.builder()
                 .id(1L)
                 .user(testUser)
+                .familyId(java.util.UUID.randomUUID())
                 .tokenHash(TokenHashUtil.hash(clearToken))
                 .ipAddress("127.0.0.1")
                 .deviceInfo("Test-Device")
@@ -103,7 +101,7 @@ class RefreshTokenServiceTest {
         }
 
         @Test
-        @DisplayName("Отзывает старые токены на том же устройстве")
+        @DisplayName("Revokes old tokens on same device")
         void shouldRevokeOldTokensOnSameDevice() {
             // Given
             when(userRepository.findById(1L))
@@ -122,7 +120,7 @@ class RefreshTokenServiceTest {
         }
 
         @Test
-        @DisplayName("Бросает UserNotFoundException для несуществующего пользователя")
+        @DisplayName("Throws UserNotFoundException for user who does not exist")
         void shouldThrowWhenUserNotFound() {
             // Given
             when(userRepository.findById(999L))
@@ -237,7 +235,7 @@ class RefreshTokenServiceTest {
         }
 
         @Test
-        @DisplayName("Несуществующий токен - не падает, не сохраняет")
+        @DisplayName("Non-existing token does not throws or save anything")
         void shouldDoNothingWhenTokenNotFound() {
             // Given
             when(refreshTokenRepository.findByTokenHash(anyString()))
@@ -256,7 +254,7 @@ class RefreshTokenServiceTest {
     class RevokeAllUserTokens {
 
         @Test
-        @DisplayName("Делегирует вызов в репозиторий")
+        @DisplayName("Delegates the call into repository")
         void shouldDelegateToRepository() {
             // Given
             when(refreshTokenRepository.revokeAllByUserId(1L))
@@ -267,6 +265,75 @@ class RefreshTokenServiceTest {
 
             // Then
             verify(refreshTokenRepository).revokeAllByUserId(1L);
+        }
+    }
+
+    @Nested
+    @DisplayName("rotateRefreshToken")
+    class RotateRefreshToken {
+
+        @Test
+        @DisplayName("Returns new token and marks old token as consumed")
+        void shouldRotateSuccessfully() {
+            String clearToken = "valid-token";
+            RefreshToken oldToken = buildToken(clearToken, null, now().plusHours(1));
+
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(oldToken));
+
+            String newToken = refreshTokenService.rotateRefreshToken(clearToken, "127.0.0.1", "Device");
+
+            assertThat(newToken).isNotNull();
+            assertThat(oldToken.getConsumedAt()).isEqualTo(now());
+
+            // Проверяем, что сохранился и старый (обновленный), и новый токен
+            verify(refreshTokenRepository, times(2)).save(any(RefreshToken.class));
+        }
+
+        @Test
+        @DisplayName("Grace Period: successful rotation")
+        void shouldAllowRotationWithinGracePeriod() {
+            String clearToken = "grace-token";
+            RefreshToken oldToken = buildToken(clearToken, null, now().plusHours(1));
+
+            // Grace period - длится 30 сек
+            oldToken.setConsumedAt(now().minusSeconds(10));
+
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(oldToken));
+
+            String newToken = refreshTokenService.rotateRefreshToken(clearToken, "127.0.0.1", "Device");
+
+            assertThat(newToken).isNotNull();
+            verify(refreshTokenRepository, never()).revokeByFamilyId(any());
+        }
+
+        @Test
+        @DisplayName("Reuse attack: revokes all tokens by family")
+        void shouldRevokeFamilyOnReuseAttack() {
+            String clearToken = "stolen-token";
+            RefreshToken oldToken = buildToken(clearToken, null, now().plusHours(1));
+            // Не подходит под Grace Period
+            oldToken.setConsumedAt(now().minusMinutes(1));
+
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(oldToken));
+
+            assertThatThrownBy(() -> refreshTokenService.rotateRefreshToken(clearToken, "127.0.0.1", "Device"))
+                    .isInstanceOf(TokenRevokedException.class);
+
+            verify(refreshTokenRepository).revokeByFamilyId(oldToken.getFamilyId());
+        }
+
+        @Test
+        @DisplayName("Revoked token rotation revokes all tokens by family")
+        void shouldRevokeFamilyIfTokenIsAlreadyRevoked() {
+            String clearToken = "revoked-token";
+            RefreshToken oldToken = buildToken(clearToken, now().minusMinutes(5), now().plusHours(1));
+
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(oldToken));
+
+            assertThatThrownBy(() -> refreshTokenService.rotateRefreshToken(clearToken, "127.0.0.1", "Device"))
+                    .isInstanceOf(TokenRevokedException.class);
+
+            verify(refreshTokenRepository).revokeByFamilyId(oldToken.getFamilyId());
         }
     }
 }

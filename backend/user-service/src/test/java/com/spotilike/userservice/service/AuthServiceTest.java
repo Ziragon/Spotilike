@@ -4,6 +4,7 @@ import com.spotilike.userservice.dto.response.AuthResponse;
 import com.spotilike.userservice.exception.auth.InvalidCredentialsException;
 import com.spotilike.userservice.exception.resource.DuplicateEmailException;
 import com.spotilike.userservice.exception.resource.UserNotFoundException;
+import com.spotilike.userservice.model.RefreshToken;
 import com.spotilike.userservice.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +15,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -55,7 +58,7 @@ class AuthServiceTest {
     class Register {
 
         @Test
-        @DisplayName("Успешная регистрация — возвращает токены")
+        @DisplayName("Successful registration returns auth response")
         void shouldReturnTokensOnSuccess() {
             // Given
             when(userService.createUser("test@mail.com", "rawPass", "nick"))
@@ -76,7 +79,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Делегирует создание пользователя в UserService")
+        @DisplayName("Delegates user creation in UserService")
         void shouldDelegateUserCreationToUserService() {
             // Given
             when(userService.createUser(any(), any(), any()))
@@ -94,7 +97,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Создаёт refresh-токен с правильными ip и device")
+        @DisplayName("Creates refresh-токен with correct ip and device")
         void shouldCreateRefreshTokenWithCorrectIpAndDevice() {
             // Given
             when(userService.createUser(any(), any(), any()))
@@ -113,7 +116,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Пробрасывает исключение от UserService")
+        @DisplayName("Throws exception from UserService")
         void shouldPropagateExceptionFromUserService() {
             // Given
             when(userService.createUser(any(), any(), any()))
@@ -137,7 +140,7 @@ class AuthServiceTest {
     class Login {
 
         @Test
-        @DisplayName("Успешный логин - возвращает токены")
+        @DisplayName("Successful login returns auth response")
         void shouldReturnTokensOnSuccess() {
             // Given
             when(userService.findByEmail("test@mail.com"))
@@ -160,7 +163,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Неверный пароль - InvalidCredentialsException")
+        @DisplayName("Incorrect password - InvalidCredentialsException")
         void shouldThrowOnWrongPassword() {
             // Given
             when(userService.findByEmail("test@mail.com"))
@@ -180,7 +183,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Пользователь не найден - пробрасывает UserNotFoundException")
+        @DisplayName("User not found - UserNotFoundException")
         void shouldPropagateWhenUserNotFound() {
             // Given
             when(userService.findByEmail("no@mail.com"))
@@ -197,7 +200,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Создаёт refresh-токен с правильными ip и device")
+        @DisplayName("Creates refresh-token with correct ip and device")
         void shouldCreateRefreshTokenWithCorrectIpAndDevice() {
             // Given
             when(userService.findByEmail(any())).thenReturn(testUser);
@@ -212,6 +215,33 @@ class AuthServiceTest {
             // Then
             verify(refreshTokenService)
                     .createRefreshToken(1L, "10.0.0.1", "Android");
+        }
+    }
+
+    @Nested
+    @DisplayName("refreshToken")
+    class RefreshTokenEndpoint {
+
+        @Test
+        @DisplayName("Successful token rotate")
+        void shouldReturnNewTokensOnSuccess() {
+            String oldRefresh = "old-refresh";
+            String newRefresh = "new-refresh";
+            String newAccess = "new-access";
+
+            RefreshToken mockTokenEntity = RefreshToken.builder().user(testUser).build();
+
+            when(refreshTokenService.rotateRefreshToken(oldRefresh, "127.0.0.1", "Device"))
+                    .thenReturn(newRefresh);
+            when(refreshTokenService.findByToken(oldRefresh))
+                    .thenReturn(Optional.of(mockTokenEntity));
+            when(jwtService.generateToken(testUser))
+                    .thenReturn(newAccess);
+
+            AuthResponse response = authService.refreshToken(oldRefresh, "127.0.0.1", "Device");
+
+            assertThat(response.accessToken()).isEqualTo(newAccess);
+            assertThat(response.refreshToken()).isEqualTo(newRefresh);
         }
     }
 }
