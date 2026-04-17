@@ -55,12 +55,12 @@ class UserServiceTest {
             when(roleRepository.findByName(RoleName.ROLE_USER)).thenReturn(Optional.of(defaultRole));
             when(passwordEncoder.encode("password")).thenReturn("hash");
 
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             User result = userService.createUser("new@mail.com", "password", "nick");
 
             assertThat(result.getEmail()).isEqualTo("new@mail.com");
-            verify(userRepository).save(any());
+            verify(userRepository).saveAndFlush(any());
         }
 
         @Test
