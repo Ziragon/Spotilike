@@ -33,15 +33,8 @@ public class RefreshTokenService {
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
-    private Optional<RefreshToken> lookupByToken(String clearToken) {
-        return refreshTokenRepository
-                .findByTokenHash(TokenHashUtil.hash(clearToken));
-    }
-
-    private void revokeAllTokens(Long userId) {
-        int count = refreshTokenRepository.revokeAllByUserId(userId);
-        log.info("Revoked {} token(s) for user {}", count, userId);
-    }
+    @Value("${application.security.jwt.refresh-token.grace-period-seconds:30}")
+    private long gracePeriodSeconds;
 
     @Transactional(readOnly = true)
     public Optional<RefreshToken> findByToken(String clearToken) {
@@ -69,12 +62,64 @@ public class RefreshTokenService {
                 .tokenHash(TokenHashUtil.hash(clearToken))
                 .ipAddress(ipAddress)
                 .deviceInfo(deviceInfo)
+                .familyId(UUID.randomUUID())
                 .expiresAt(OffsetDateTime.now(clock)
                         .plus(refreshExpiration, ChronoUnit.MILLIS))
                 .build();
 
         refreshTokenRepository.save(refreshToken);
         return clearToken;
+    }
+
+    @Transactional
+    public String rotateRefreshToken(String clearToken, String ipAddress, String deviceInfo) {
+        RefreshToken oldToken = lookupByToken(clearToken)
+                .orElseThrow(TokenNotFoundException::new);
+
+        UUID familyId = oldToken.getFamilyId();
+
+        if (oldToken.getRevokedAt() != null) {
+            log.warn("SECURITY: Attempt to use revoked token. Revoking family {}", familyId);
+            refreshTokenRepository.revokeByFamilyId(familyId);
+            throw new TokenRevokedException();
+        }
+
+        if (oldToken.getExpiresAt().isBefore(OffsetDateTime.now(clock))) {
+            throw new TokenExpiredException("refresh");
+        }
+
+        // Reuse detection / Grace period
+        if (oldToken.getConsumedAt() != null) {
+            long secondsSinceConsumed = ChronoUnit.SECONDS.between(
+                    oldToken.getConsumedAt(), OffsetDateTime.now(clock));
+
+            if (secondsSinceConsumed <= gracePeriodSeconds) {
+                // Grace period активен
+                log.info("Grace period active for token family {}", familyId);
+            } else {
+                log.warn("SECURITY: Token reuse detected! Revoking family {}", familyId);
+                refreshTokenRepository.revokeByFamilyId(familyId);
+                throw new TokenRevokedException();
+            }
+        } else {
+            // Токен использован
+            oldToken.setConsumedAt(OffsetDateTime.now(clock));
+            refreshTokenRepository.save(oldToken);
+        }
+
+        String newClearToken = UUID.randomUUID().toString();
+
+        RefreshToken newToken = RefreshToken.builder()
+                .user(oldToken.getUser())
+                .familyId(familyId)
+                .tokenHash(TokenHashUtil.hash(newClearToken))
+                .ipAddress(ipAddress)
+                .deviceInfo(deviceInfo)
+                .expiresAt(OffsetDateTime.now(clock).plus(refreshExpiration, ChronoUnit.MILLIS))
+                .build();
+
+        refreshTokenRepository.save(newToken);
+        return newClearToken;
     }
 
     @Transactional
@@ -119,5 +164,15 @@ public class RefreshTokenService {
     @Transactional
     public void revokeAllUserTokens(Long userId) {
         revokeAllTokens(userId);
+    }
+
+    private Optional<RefreshToken> lookupByToken(String clearToken) {
+        return refreshTokenRepository
+                .findByTokenHash(TokenHashUtil.hash(clearToken));
+    }
+
+    private void revokeAllTokens(Long userId) {
+        int count = refreshTokenRepository.revokeAllByUserId(userId);
+        log.info("Revoked {} token(s) for user {}", count, userId);
     }
 }
