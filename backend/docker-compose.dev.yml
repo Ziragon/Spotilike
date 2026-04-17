@@ -125,6 +125,14 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  # Mailhog - имитация почтового сервера
+  mailhog:
+    image: mailhog/mailhog
+    container_name: spotilike-mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+
 volumes:
   postgres_data:
   redis_data:
