@@ -1,6 +1,7 @@
 # Путь относительно корня проекта (вызов через .bat)
 $CertDir = "./docker/certs"
 
+# Проверка mkcert в системе
 if (!(Get-Command mkcert -ErrorAction SilentlyContinue)) {
     Write-Host "Error: mkcert not found!" -ForegroundColor Red
     exit
