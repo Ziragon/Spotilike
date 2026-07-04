@@ -1,0 +1,13 @@
+localhost {
+    tls internal
+
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer-when-downgrade"
+        Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'; frame-ancestors 'self';"
+    }
+
+    reverse_proxy host.docker.internal:8000
+}
