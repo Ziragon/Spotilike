@@ -1,3 +1,5 @@
+### DEPRECATED
+
 # Путь относительно корня проекта (вызов через .bat)
 $CertDir = "./docker/certs"
 

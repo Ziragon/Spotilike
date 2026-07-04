@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+### DEPRECATED
 # Путь относительно корня проекта
 CERT_DIR="./docker/certs"
 
