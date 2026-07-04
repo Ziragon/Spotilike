@@ -1,3 +1,5 @@
+### DEPRECATED
+
 @echo off
 SETLOCAL
 cd /d "%~dp0"
