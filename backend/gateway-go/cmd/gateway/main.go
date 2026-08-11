@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"gateway-go/config"
+	"gateway-go/internal/middleware"
 	"gateway-go/internal/proxy"
 	"log"
 	"net/http"
@@ -24,6 +25,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to init user proxy: %v", err)
 	}
+
+	r.Use(middleware.RequestIDMiddleware)
 
 	r.Handle("/api/v1/auth/*", usersProxy)
 
