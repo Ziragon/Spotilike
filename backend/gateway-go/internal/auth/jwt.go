@@ -6,14 +6,22 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("super-secret-key-that-no-one-knows")
+type JwtManager struct {
+	secret []byte
+}
 
-func GetClaims(tokenStr string) (jwt.Claims, error) {
+func NewJwtManager(secret string) *JwtManager {
+	return &JwtManager{
+		secret: []byte(secret),
+	}
+}
+
+func (m *JwtManager) GetClaims(tokenStr string) (jwt.Claims, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return jwtSecret, nil
+		return m.secret, nil
 	})
 
 	if err != nil {
