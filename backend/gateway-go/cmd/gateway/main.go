@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"gateway-go/config"
 	"gateway-go/internal/proxy"
 	"log"
 	"net/http"
@@ -13,14 +15,9 @@ func main() {
 
 	r := chi.NewRouter()
 
-	server := &http.Server{
-		Addr:              ":8080",
-		Handler:           r,
-		ReadHeaderTimeout: 2 * time.Second,
-		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      15 * time.Second,
-		IdleTimeout:       60 * time.Second,
-		MaxHeaderBytes:    1 << 20,
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to read config: %v", err)
 	}
 
 	usersProxy, err := proxy.New("http://localhost:8081")
@@ -30,9 +27,21 @@ func main() {
 
 	r.Handle("/api/v1/auth/*", usersProxy)
 
+	serverAddr := ":" + cfg.Port
+
+	server := &http.Server{
+		Addr:              serverAddr,
+		Handler:           r,
+		ReadHeaderTimeout: 2 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
+
 	log.Printf("Server started at %v", server.Addr)
 
-	if err := server.ListenAndServe(); err != nil {
+	if err = server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
