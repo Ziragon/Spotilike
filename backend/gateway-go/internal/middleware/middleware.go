@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"gateway-go/internal/auth"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -51,9 +50,11 @@ func JwtAuthMiddleware(jwtManager *auth.JwtManager) func(http.Handler) http.Hand
 			}
 
 			claims, err := jwtManager.GetClaims(tokenStr)
-			if err != nil {
-				http.Error(w, "invalid or expired token", http.StatusUnauthorized)
-				log.Printf("%v", err)
+			if err != nil || claims.UserID == 0 || claims.Subject == "" {
+				r.Header.Del("Authorization")
+				r.Header.Set("X-User-Anonymous", "true")
+
+				next.ServeHTTP(w, r)
 				return
 			}
 
@@ -70,6 +71,7 @@ func JwtAuthMiddleware(jwtManager *auth.JwtManager) func(http.Handler) http.Hand
 			}
 
 			r.Header.Set("X-User-Anonymous", "false")
+			r.Header.Del("Authorization")
 
 			next.ServeHTTP(w, r)
 		})
