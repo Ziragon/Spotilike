@@ -5,6 +5,7 @@ import (
 	"gateway-go/internal/auth"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -34,33 +35,30 @@ func RequestIDMiddleware(next http.Handler) http.Handler {
 func JwtAuthMiddleware(jwtManager *auth.JwtManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
-				http.Error(w, "missing authorization header", http.StatusUnauthorized)
-				return
-			}
-
-			parts := strings.Split(authHeader, " ")
-			if len(parts) != 2 || parts[0] != "Bearer" {
-				http.Error(w, "invalid authorization header format", http.StatusUnauthorized)
-				return
-			}
-
-			tokenStr := parts[1]
-
-			claims, err := jwtManager.GetClaims(tokenStr)
-			if err != nil {
-				http.Error(w, "invalid or expired token", http.StatusUnauthorized)
-				return
-			}
 
 			r.Header.Del("X-User-Id")
 			r.Header.Del("X-User-Email")
 			r.Header.Del("X-User-Roles")
 			r.Header.Del("X-User-Anonymous")
 
-			if claims.UserID != "" {
-				r.Header.Set("X-User-Id", claims.UserID)
+			authHeader := r.Header.Get("Authorization")
+			tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+
+			if !ok || strings.TrimSpace(tokenStr) == "" {
+				r.Header.Set("X-User-Anonymous", "true")
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			claims, err := jwtManager.GetClaims(tokenStr)
+			if err != nil {
+				http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+				log.Printf("%v", err)
+				return
+			}
+
+			if claims.UserID != 0 {
+				r.Header.Set("X-User-Id", strconv.Itoa(claims.UserID))
 			}
 
 			if claims.Subject != "" {
@@ -71,9 +69,19 @@ func JwtAuthMiddleware(jwtManager *auth.JwtManager) func(http.Handler) http.Hand
 				r.Header.Set("X-User-Roles", strings.Join(claims.Roles, ","))
 			}
 
-			log.Printf("%v", claims)
+			r.Header.Set("X-User-Anonymous", "false")
 
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func RequireAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-User-Anonymous") == "true" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
