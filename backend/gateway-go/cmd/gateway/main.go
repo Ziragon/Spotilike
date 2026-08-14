@@ -13,16 +13,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func main() {
-
+func setupRouter(jwtManager *auth.JwtManager) http.Handler {
 	r := chi.NewRouter()
-
-	cfg, err := config.Load()
-	if err != nil {
-		log.Fatalf("Failed to read config: %v", err)
-	}
-
-	jwtManager := auth.NewJwtManager(cfg.JWTSecret)
 
 	usersProxy, err := proxy.New("http://localhost:8081")
 	if err != nil {
@@ -32,9 +24,41 @@ func main() {
 	r.Use(middleware.RequestIDMiddleware)
 	r.Use(middleware.JwtAuthMiddleware(jwtManager))
 
-	r.Handle("/api/v1/auth/*", usersProxy)
+	// Open paths
+	r.Handle("/api/v1/auth/login", usersProxy)
+	r.Handle("/api/v1/auth/register", usersProxy)
+	r.Handle("/api/v1/auth/refresh", usersProxy)
+	r.Handle("/actuator/health", usersProxy)
+	r.Handle("/swagger-ui.html", usersProxy)
+	r.Handle("/swagger-ui/*", usersProxy)
+	r.Handle("/v3/api-docs/*", usersProxy)
+	r.Handle("/webjars/*", usersProxy)
+
+	// Secured paths
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequireAuthMiddleware)
+
+		r.Handle("/api/v1/auth/*", usersProxy)
+	})
+
+	return r
+}
+
+func main() {
+
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to read config: %v", err)
+	}
+
+	jwtManager, err := auth.NewJwtManager(cfg.JWTSecret)
+	if err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 
 	serverAddr := ":" + cfg.Port
+
+	r := setupRouter(jwtManager)
 
 	server := &http.Server{
 		Addr:              serverAddr,

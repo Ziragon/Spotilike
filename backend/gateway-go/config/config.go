@@ -10,7 +10,7 @@ import (
 type Config struct {
 	Env       string `env:"APP_ENV" envDefault:"dev"`
 	Port      string `env:"SERVER_PORT" envDefault:"8080"`
-	JWTSecret string `env:"JWT_SECRET_KEY" envDefault:"must-be-overridden"`
+	JWTSecret string `env:"JWT_SECRET_KEY" envDefault:"bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE="`
 }
 
 func Load() (*Config, error) {

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -11,15 +12,20 @@ type JwtManager struct {
 }
 
 type UserClaims struct {
-	UserID string   `json:"userId"`
+	UserID int      `json:"userId"`
 	Roles  []string `json:"roles"`
 	jwt.RegisteredClaims
 }
 
-func NewJwtManager(secret string) *JwtManager {
-	return &JwtManager{
-		secret: []byte(secret),
+func NewJwtManager(secretBase64 string) (*JwtManager, error) {
+	secretBytes, err := base64.StdEncoding.DecodeString(secretBase64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base64 secret: %w", err)
 	}
+
+	return &JwtManager{
+		secret: secretBytes,
+	}, nil
 }
 
 func (m *JwtManager) GetClaims(tokenStr string) (*UserClaims, error) {
