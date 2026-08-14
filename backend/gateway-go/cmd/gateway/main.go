@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"gateway-go/config"
+	"gateway-go/internal/auth"
 	"gateway-go/internal/middleware"
 	"gateway-go/internal/proxy"
 	"log"
@@ -21,12 +22,15 @@ func main() {
 		log.Fatalf("Failed to read config: %v", err)
 	}
 
+	jwtManager := auth.NewJwtManager(cfg.JWTSecret)
+
 	usersProxy, err := proxy.New("http://localhost:8081")
 	if err != nil {
 		log.Fatalf("Failed to init user proxy: %v", err)
 	}
 
 	r.Use(middleware.RequestIDMiddleware)
+	r.Use(middleware.JwtAuthMiddleware(jwtManager))
 
 	r.Handle("/api/v1/auth/*", usersProxy)
 
