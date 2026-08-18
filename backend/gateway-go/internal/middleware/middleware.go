@@ -4,7 +4,7 @@ import (
 	"context"
 	"gateway-go/internal/auth"
 	"gateway-go/internal/response"
-	"log"
+	"log/slog"
 	"net/http"
 	"runtime/debug"
 	"strconv"
@@ -36,12 +36,21 @@ func RequestIDMiddleware(next http.Handler) http.Handler {
 
 func RecoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("[PANIC RECOVER] %v\n%s", err, debug.Stack())
+				slog.Error("Panic recovered",
+					"error", err,
+					"stack", string(debug.Stack()),
+					"path", r.URL.Path,
+					"request_id", r.Header.Get("X-Request-ID"),
+				)
 
-				http.Error(w, "Internal server error", http.StatusInternalServerError)
+				response.SendError(w, r,
+					http.StatusInternalServerError,
+					"INTERNAL_ERROR",
+					"An unexpected internal error occurred",
+					nil,
+				)
 			}
 		}()
 
@@ -76,7 +85,7 @@ func JwtAuthMiddleware(jwtManager *auth.JwtManager) func(http.Handler) http.Hand
 				return
 			}
 
-			r.Header.Set("X-User-Id", strconv.Itoa(claims.UserID))
+			r.Header.Set("X-User-Id", strconv.FormatInt(claims.UserID, 10))
 			r.Header.Set("X-User-Email", claims.Subject)
 
 			if len(claims.Roles) > 0 {

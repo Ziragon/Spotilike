@@ -12,7 +12,7 @@ type JwtManager struct {
 }
 
 type UserClaims struct {
-	UserID int      `json:"userId"`
+	UserID int64    `json:"userId"`
 	Roles  []string `json:"roles"`
 	jwt.RegisteredClaims
 }
