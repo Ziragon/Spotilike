@@ -98,7 +98,79 @@ func TestNewJwtManager(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := auth.NewJwtManager(tt.secretKey)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("expected error: %v, got %v", tt.wantErr, err)
+				t.Errorf("expected error: %v, got %v", tt.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestUserClaims_Valid(t *testing.T) {
+	valid := auth.UserClaims{
+		UserID: 123,
+		Roles:  []string{"User"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user@test.com",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	}
+
+	invalidUserId := auth.UserClaims{
+		Roles: []string{"User"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user@test.com",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	}
+
+	negativeUserId := auth.UserClaims{
+		UserID: -1,
+		Roles:  []string{"User"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user@test.com",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	}
+
+	invalidSubject := auth.UserClaims{
+		UserID: 123,
+		Roles:  []string{"User"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	}
+
+	tests := []struct {
+		name    string
+		claims  auth.UserClaims
+		wantErr bool
+	}{
+		{
+			name:    "Valid claims",
+			claims:  valid,
+			wantErr: false,
+		},
+		{
+			name:    "Invalid userId",
+			claims:  invalidUserId,
+			wantErr: true,
+		},
+		{
+			name:    "Negative subject",
+			claims:  negativeUserId,
+			wantErr: true,
+		},
+		{
+			name:    "Invalid subject",
+			claims:  invalidSubject,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.claims.Valid()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("expected error: %v, got %v", tt.wantErr, err)
 			}
 		})
 	}
