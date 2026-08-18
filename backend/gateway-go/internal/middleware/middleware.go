@@ -14,7 +14,7 @@ import (
 
 type ctxKey string
 
-const requestIDKey ctxKey = "requestID"
+const RequestIDKey ctxKey = "requestID"
 
 func RequestIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func RequestIDMiddleware(next http.Handler) http.Handler {
 		r.Header.Set("X-Request-ID", reqID)
 		w.Header().Set("X-Request-ID", reqID)
 
-		ctx := context.WithValue(r.Context(), requestIDKey, reqID)
+		ctx := context.WithValue(r.Context(), RequestIDKey, reqID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -92,7 +92,7 @@ func JwtAuthMiddleware(jwtManager *auth.JwtManager) func(http.Handler) http.Hand
 
 func RequireAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("X-User-Anonymous") == "true" {
+		if r.Header.Get("X-User-Anonymous") != "false" {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
