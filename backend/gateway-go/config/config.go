@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Env       string `env:"APP_ENV" envDefault:"dev"`
-	Port      string `env:"SERVER_PORT" envDefault:"8080"`
-	JWTSecret string `env:"JWT_SECRET_KEY" envDefault:"bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE="`
+	Env            string `env:"APP_ENV" envDefault:"dev"`
+	Port           string `env:"SERVER_PORT" envDefault:"8080"`
+	JWTSecret      string `env:"JWT_SECRET_KEY" envDefault:"bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE="`
+	UserServiceURL string `env:"USER_SERVICE_URL" envDefault:"http://localhost:8081"`
 }
 
 func Load() (*Config, error) {

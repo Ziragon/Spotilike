@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"gateway-go/internal/auth"
+	"gateway-go/internal/response"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -93,7 +94,7 @@ func JwtAuthMiddleware(jwtManager *auth.JwtManager) func(http.Handler) http.Hand
 func RequireAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("X-User-Anonymous") != "false" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			response.SendError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid token", nil)
 			return
 		}
 		next.ServeHTTP(w, r)

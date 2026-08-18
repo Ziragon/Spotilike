@@ -13,10 +13,10 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func setupRouter(jwtManager *auth.JwtManager) http.Handler {
+func setupRouter(jwtManager *auth.JwtManager, cfg *config.Config) http.Handler {
 	r := chi.NewRouter()
 
-	usersProxy, err := proxy.New("http://localhost:8081")
+	usersProxy, err := proxy.New(cfg.UserServiceURL)
 	if err != nil {
 		log.Fatalf("Failed to init user proxy: %v", err)
 	}
@@ -59,7 +59,7 @@ func main() {
 
 	serverAddr := ":" + cfg.Port
 
-	r := setupRouter(jwtManager)
+	r := setupRouter(jwtManager, cfg)
 
 	server := &http.Server{
 		Addr:              serverAddr,
