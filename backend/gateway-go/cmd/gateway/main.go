@@ -21,6 +21,7 @@ func setupRouter(jwtManager *auth.JwtManager) http.Handler {
 		log.Fatalf("Failed to init user proxy: %v", err)
 	}
 
+	r.Use(middleware.RecoveryMiddleware)
 	r.Use(middleware.RequestIDMiddleware)
 	r.Use(middleware.JwtAuthMiddleware(jwtManager))
 
