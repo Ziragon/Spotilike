@@ -14,7 +14,7 @@ import (
 
 type ctxKey string
 
-const RequestIDKey ctxKey = "requestID"
+const requestIDKey ctxKey = "requestID"
 
 func RequestIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func RequestIDMiddleware(next http.Handler) http.Handler {
 		r.Header.Set("X-Request-ID", reqID)
 		w.Header().Set("X-Request-ID", reqID)
 
-		ctx := context.WithValue(r.Context(), RequestIDKey, reqID)
+		ctx := context.WithValue(r.Context(), requestIDKey, reqID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -61,27 +61,22 @@ func JwtAuthMiddleware(jwtManager *auth.JwtManager) func(http.Handler) http.Hand
 			tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
 
 			if !ok || strings.TrimSpace(tokenStr) == "" {
+				r.Header.Del("Authorization")
 				r.Header.Set("X-User-Anonymous", "true")
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			claims, err := jwtManager.GetClaims(tokenStr)
-			if err != nil || claims.UserID == 0 || claims.Subject == "" {
+			if err != nil || claims.Valid() != nil {
 				r.Header.Del("Authorization")
 				r.Header.Set("X-User-Anonymous", "true")
-
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			if claims.UserID != 0 {
-				r.Header.Set("X-User-Id", strconv.Itoa(claims.UserID))
-			}
-
-			if claims.Subject != "" {
-				r.Header.Set("X-User-Email", claims.Subject)
-			}
+			r.Header.Set("X-User-Id", strconv.Itoa(claims.UserID))
+			r.Header.Set("X-User-Email", claims.Subject)
 
 			if len(claims.Roles) > 0 {
 				r.Header.Set("X-User-Roles", strings.Join(claims.Roles, ","))
