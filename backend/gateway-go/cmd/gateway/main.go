@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"gateway-go/config"
 	"gateway-go/internal/auth"
 	"gateway-go/internal/middleware"
@@ -25,17 +26,17 @@ func initLogger() {
 	slog.SetDefault(logger)
 }
 
-func setupRouter(jwtManager *auth.JwtManager, cfg *config.Config) http.Handler {
+func setupRouter(jwtManager *auth.JwtManager, cfg *config.Config) (http.Handler, error) {
 	r := chi.NewRouter()
 
 	usersProxy, err := proxy.New(cfg.UserServiceURL)
 	if err != nil {
-		slog.Error("Failed to init user proxy", "error", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to init user proxy: %w", err)
 	}
 
-	r.Use(middleware.RecoveryMiddleware)
 	r.Use(middleware.RequestIDMiddleware)
+	r.Use(middleware.LoggingMiddleware)
+	r.Use(middleware.RecoveryMiddleware)
 	r.Use(middleware.JwtAuthMiddleware(jwtManager))
 
 	// Open paths
@@ -55,7 +56,7 @@ func setupRouter(jwtManager *auth.JwtManager, cfg *config.Config) http.Handler {
 		r.Handle("/api/v1/auth/*", usersProxy)
 	})
 
-	return r
+	return r, nil
 }
 
 func main() {
@@ -75,7 +76,11 @@ func main() {
 
 	serverAddr := ":" + cfg.Port
 
-	r := setupRouter(jwtManager, cfg)
+	r, err := setupRouter(jwtManager, cfg)
+	if err != nil {
+		slog.Error("Failed to init router", "error", err)
+		os.Exit(1)
+	}
 
 	server := &http.Server{
 		Addr:              serverAddr,

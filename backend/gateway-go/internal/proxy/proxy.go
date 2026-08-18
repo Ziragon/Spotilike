@@ -42,7 +42,7 @@ func New(targetUrl string) (http.Handler, error) {
 			"target", target.String(),
 			"method", r.Method,
 			"path", r.URL.Path,
-			"request_id", r.Header.Get("X-Request-Id"),
+			"request_id", r.Header.Get("X-Request-ID"),
 			"is_timeout", isTimeout,
 			"error", err,
 		)
