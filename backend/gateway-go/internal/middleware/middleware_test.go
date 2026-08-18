@@ -12,6 +12,89 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+func TestRequestIDMiddleware(t *testing.T) {
+	tests := []struct {
+		name          string
+		incomingReqID string
+	}{
+		{
+			name:          "New RequestID when missing",
+			incomingReqID: "",
+		},
+		{
+			name:          "Existing RequestID",
+			incomingReqID: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var capturedReqHeader string
+			var capturedCtxValue string
+
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				capturedReqHeader = r.Header.Get("X-Request-ID")
+				if v, ok := r.Context().Value(middleware.RequestIDKey).(string); ok {
+					capturedCtxValue = v
+				}
+			})
+
+			req := httptest.NewRequest("GET", "/test", nil)
+			if tt.incomingReqID != "" {
+				req.Header.Set("X-Request-ID", tt.incomingReqID)
+			}
+			rec := httptest.NewRecorder()
+
+			middleware.RequestIDMiddleware(next).ServeHTTP(rec, req)
+
+			if capturedReqHeader == "" {
+				t.Fatal("expected X-Request-ID to be set on request")
+			}
+			if tt.incomingReqID != "" && capturedReqHeader != tt.incomingReqID {
+				t.Errorf("expected preserved ID %q, got %q", tt.incomingReqID, capturedReqHeader)
+			}
+			if capturedReqHeader != rec.Header().Get("X-Request-ID") {
+				t.Error("request and response X-Request-ID should match")
+			}
+			if capturedCtxValue != capturedReqHeader {
+				t.Error("context value should match header value")
+			}
+		})
+	}
+}
+
+func TestRecoveryMiddleware(t *testing.T) {
+	t.Run("recovers from panic and returns 500", func(t *testing.T) {
+		panicking := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			panic("something went wrong")
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rec := httptest.NewRecorder()
+
+		middleware.RecoveryMiddleware(panicking).ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusInternalServerError {
+			t.Errorf("expected 500, got %d", rec.Code)
+		}
+	})
+
+	t.Run("passes through normally without panic", func(t *testing.T) {
+		ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rec := httptest.NewRecorder()
+
+		middleware.RecoveryMiddleware(ok).ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d", rec.Code)
+		}
+	})
+}
+
 func TestJwtAuthMiddleware(t *testing.T) {
 
 	jwtManager, secretBytes := testutil.NewTestJwtManager(t)
@@ -220,6 +303,65 @@ func TestJwtAuthMiddleware(t *testing.T) {
 				if val := capturedHeaders.Get(key); val != "" {
 					t.Errorf("header %s should be empty, but got %q", key, val)
 				}
+			}
+		})
+	}
+}
+
+func TestRequireAuthMiddleware(t *testing.T) {
+	tests := []struct {
+		name           string
+		anonymousValue string
+		expectedStatus int
+		nextCalled     bool
+	}{
+		{
+			name:           "Anonymous request is rejected",
+			anonymousValue: "true",
+			expectedStatus: http.StatusUnauthorized,
+			nextCalled:     false,
+		},
+		{
+			name:           "Authenticated request passes through",
+			anonymousValue: "false",
+			expectedStatus: http.StatusOK,
+			nextCalled:     true,
+		},
+		{
+			name:           "Request with missing header is rejected",
+			anonymousValue: "",
+			expectedStatus: http.StatusUnauthorized,
+			nextCalled:     false,
+		},
+		{
+			name:           "Garbage value is treated as unauthorized",
+			anonymousValue: "yes-please",
+			expectedStatus: http.StatusUnauthorized,
+			nextCalled:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			nextCalled := false
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				nextCalled = true
+				w.WriteHeader(http.StatusOK)
+			})
+
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			if tt.anonymousValue != "" {
+				req.Header.Set("X-User-Anonymous", tt.anonymousValue)
+			}
+			rec := httptest.NewRecorder()
+
+			middleware.RequireAuthMiddleware(next).ServeHTTP(rec, req)
+
+			if rec.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, rec.Code)
+			}
+			if nextCalled != tt.nextCalled {
+				t.Errorf("expected nextCalled=%v, got %v", tt.nextCalled, nextCalled)
 			}
 		})
 	}
