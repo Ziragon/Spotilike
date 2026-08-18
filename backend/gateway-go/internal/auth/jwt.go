@@ -46,3 +46,13 @@ func (m *JwtManager) GetClaims(tokenStr string) (*UserClaims, error) {
 
 	return nil, fmt.Errorf("invalid token")
 }
+
+func (c *UserClaims) Valid() error {
+	if c.UserID <= 0 {
+		return fmt.Errorf("missing or invalid user id")
+	}
+	if c.Subject == "" {
+		return fmt.Errorf("missing subject")
+	}
+	return nil
+}
