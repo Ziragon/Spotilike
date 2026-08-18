@@ -2,6 +2,7 @@ package response
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -29,5 +30,7 @@ func SendError(w http.ResponseWriter, r *http.Request, status int, code string, 
 		Details:   details,
 	}
 
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		slog.Error("Failed to write error response", "error", err, "path", r.URL.Path)
+	}
 }
