@@ -58,6 +58,15 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func GatewaySecretMiddleware(headerName, secret string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Header.Set(headerName, secret)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 func JwtAuthMiddleware(jwtManager *auth.JwtManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
