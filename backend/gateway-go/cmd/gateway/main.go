@@ -9,6 +9,7 @@ import (
 	"gateway-go/internal/handler"
 	"gateway-go/internal/middleware"
 	"gateway-go/internal/proxy"
+	"gateway-go/internal/swagger"
 	"log/slog"
 	"net/http"
 	"os"
@@ -19,6 +20,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 )
+
+type DocsRoute struct {
+	Name            string
+	GatewayPath     string
+	BackendDocsPath string
+	TargetURL       string
+}
 
 func initLogger() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
@@ -39,23 +47,43 @@ func setupRouter(jwtManager *auth.JwtManager, cfg *config.Config, isReady *atomi
 	r.Use(middleware.RecoveryMiddleware)
 	r.Use(middleware.RequestIDMiddleware)
 	r.Use(middleware.LoggingMiddleware)
+	r.Use(middleware.JwtAuthMiddleware(jwtManager))
 
 	healthHandler := handler.NewHandler(isReady)
 	r.Get("/healthz", healthHandler.Healthz)
 	r.Get("/readyz", healthHandler.Readyz)
 
+	docsRoutes := []DocsRoute{
+		{Name: "User Service", GatewayPath: "/v3/api-docs/user-service", BackendDocsPath: "/api-docs", TargetURL: cfg.UserServiceURL},
+	}
+	var swaggerServices []swagger.Service
+	for _, dr := range docsRoutes {
+		p, err := proxy.NewDocsProxy(dr.TargetURL, dr.BackendDocsPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init docs proxy for %s: %w", dr.Name, err)
+		}
+		r.Handle(dr.GatewayPath, p)
+		swaggerServices = append(swaggerServices, swagger.Service{Name: dr.Name, Path: dr.GatewayPath})
+	}
+	h, err := swagger.NewHandler(swaggerServices)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init swagger handler: %w", err)
+	}
+
+	r.Get("/swagger-ui", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swagger-ui/", http.StatusMovedPermanently)
+	})
+	r.Get("/swagger-ui/", h)
+	r.Get("/swagger-ui/index", h)
+	r.Get("/swagger-ui/index.html", h)
+
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.JwtAuthMiddleware(jwtManager))
 
 		// Open paths
 		r.Handle("/api/v1/auth/login", usersProxy)
 		r.Handle("/api/v1/auth/register", usersProxy)
 		r.Handle("/api/v1/auth/refresh", usersProxy)
 		r.Handle("/actuator/health", usersProxy)
-		r.Handle("/swagger-ui.html", usersProxy)
-		r.Handle("/swagger-ui/*", usersProxy)
-		r.Handle("/v3/api-docs/*", usersProxy)
-		r.Handle("/webjars/*", usersProxy)
 
 		// Secured paths
 		r.Group(func(r chi.Router) {
