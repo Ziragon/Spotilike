@@ -25,6 +25,7 @@ func SetupRouter(jwtManager *auth.JwtManager, cfg *config.Config, isReady *atomi
 	r.Use(middleware.RecoveryMiddleware)
 	r.Use(middleware.RequestIDMiddleware)
 	r.Use(middleware.LoggingMiddleware)
+	r.Use(middleware.GatewaySecretMiddleware(cfg.GatewayHeaderName, cfg.GatewaySecretKey))
 
 	r.Group(func(r chi.Router) {
 		healthHandler := NewHandler(isReady)

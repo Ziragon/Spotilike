@@ -23,12 +23,14 @@ type DocsRoute struct {
 }
 
 type Config struct {
-	Env            string      `env:"APP_ENV" env-default:"dev"`
-	Port           string      `env:"SERVER_PORT" env-default:"8080"`
-	JWTSecret      string      `env:"JWT_SECRET_KEY" env-default:"bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE="`
-	UserServiceURL string      `env:"USER_SERVICE_URL" env-default:"http://localhost:8081"`
-	DocsRoutes     []DocsRoute `yaml:"docs_routes"`
-	Cors           CorsSet     `yaml:"cors"`
+	Env               string      `env:"APP_ENV" env-default:"dev"`
+	Port              string      `env:"SERVER_PORT" env-default:"8080"`
+	JWTSecret         string      `env:"JWT_SECRET_KEY" env-default:"bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE="`
+	GatewayHeaderName string      `env:"GATEWAY_HEADER_NAME" env-default:"X-Gateway-Header"`
+	GatewaySecretKey  string      `env:"GATEWAY_SECRET_KEY" env-default:"d2h5eW91cmVhZGluZ3RoaXM="`
+	UserServiceURL    string      `env:"USER_SERVICE_URL" env-default:"http://localhost:8081"`
+	DocsRoutes        []DocsRoute `yaml:"docs_routes"`
+	Cors              CorsSet     `yaml:"cors"`
 }
 
 // expandEnv helps to parse ${VAR:-default} syntax
