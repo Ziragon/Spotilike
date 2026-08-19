@@ -21,13 +21,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type DocsRoute struct {
-	Name            string
-	GatewayPath     string
-	BackendDocsPath string
-	TargetURL       string
-}
-
 func initLogger() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
@@ -53,11 +46,8 @@ func setupRouter(jwtManager *auth.JwtManager, cfg *config.Config, isReady *atomi
 	r.Get("/healthz", healthHandler.Healthz)
 	r.Get("/readyz", healthHandler.Readyz)
 
-	docsRoutes := []DocsRoute{
-		{Name: "User Service", GatewayPath: "/v3/api-docs/user-service", BackendDocsPath: "/api-docs", TargetURL: cfg.UserServiceURL},
-	}
 	var swaggerServices []swagger.Service
-	for _, dr := range docsRoutes {
+	for _, dr := range cfg.DocsRoutes {
 		p, err := proxy.NewDocsProxy(dr.TargetURL, dr.BackendDocsPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to init docs proxy for %s: %w", dr.Name, err)
