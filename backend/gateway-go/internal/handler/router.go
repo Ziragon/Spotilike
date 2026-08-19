@@ -26,20 +26,11 @@ func SetupRouter(jwtManager *auth.JwtManager, cfg *config.Config, isReady *atomi
 	r.Use(middleware.RequestIDMiddleware)
 	r.Use(middleware.LoggingMiddleware)
 
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   cfg.Cors.AllowedOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link", "X-Total-Count"},
-		AllowCredentials: cfg.Cors.AllowCredentials,
-		MaxAge:           300,
-	}))
-
-	r.Use(middleware.JwtAuthMiddleware(jwtManager))
-
-	healthHandler := NewHandler(isReady)
-	r.Get("/healthz", healthHandler.Healthz)
-	r.Get("/readyz", healthHandler.Readyz)
+	r.Group(func(r chi.Router) {
+		healthHandler := NewHandler(isReady)
+		r.Get("/healthz", healthHandler.Healthz)
+		r.Get("/readyz", healthHandler.Readyz)
+	})
 
 	var swaggerServices []swagger.Service
 	for _, dr := range cfg.DocsRoutes {
@@ -63,6 +54,17 @@ func SetupRouter(jwtManager *auth.JwtManager, cfg *config.Config, isReady *atomi
 	r.Get("/swagger-ui/index.html", h)
 
 	r.Group(func(r chi.Router) {
+
+		r.Use(cors.Handler(cors.Options{
+			AllowedOrigins:   cfg.Cors.AllowedOrigins,
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+			ExposedHeaders:   []string{"Link", "X-Total-Count"},
+			AllowCredentials: cfg.Cors.AllowCredentials,
+			MaxAge:           300,
+		}))
+
+		r.Use(middleware.JwtAuthMiddleware(jwtManager))
 
 		// Open paths
 		r.Handle("/api/v1/auth/login", usersProxy)
