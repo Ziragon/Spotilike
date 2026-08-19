@@ -46,6 +46,9 @@ application:
       refresh-token:
         expiration: 604800000 # 7 дней
         grace-period-seconds: 30
+    gateway:
+      header-name: ${GATEWAY_HEADER_NAME}
+      header-key: ${GATEWAY_SECRET_KEY}
 
 springdoc:
   api-docs:

@@ -1,5 +1,6 @@
 package com.spotilike.userservice.config;
 
+import com.spotilike.shared.security.GatewaySecretFilter;
 import com.spotilike.shared.security.HeaderAuthenticationFilter;
 import lombok.SneakyThrows;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -34,15 +35,28 @@ public class SecurityConfig {
     }
 
     @Bean
+    public GatewaySecretFilter gatewaySecretFilter() {
+        return new GatewaySecretFilter();
+    }
+
+    @Bean
     public HeaderAuthenticationFilter headerAuthenticationFilter() {
         return new HeaderAuthenticationFilter();
     }
 
+    // ОБЯЗАТЕЛЬНО: Отключаем глобальную авторегистрацию для GatewaySecretFilter
     @Bean
-    public FilterRegistrationBean<HeaderAuthenticationFilter> disableAutoRegistration(
+    public FilterRegistrationBean<GatewaySecretFilter> disableGatewaySecretAutoRegistration(
+            GatewaySecretFilter filter) {
+        FilterRegistrationBean<GatewaySecretFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<HeaderAuthenticationFilter> disableHeaderAuthAutoRegistration(
             HeaderAuthenticationFilter filter) {
-        FilterRegistrationBean<HeaderAuthenticationFilter> registration =
-                new FilterRegistrationBean<>(filter);
+        FilterRegistrationBean<HeaderAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
         registration.setEnabled(false);
         return registration;
     }
@@ -51,6 +65,7 @@ public class SecurityConfig {
     @SneakyThrows
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
+            GatewaySecretFilter gatewaySecretFilter,
             HeaderAuthenticationFilter headerAuthFilter) {
 
         http
@@ -61,7 +76,9 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_URLS).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(headerAuthFilter,
+                .addFilterBefore(gatewaySecretFilter,
+                        UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(headerAuthFilter,
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
