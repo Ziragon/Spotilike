@@ -97,6 +97,14 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        String path = request.getRequestURI();
+
+        return path.startsWith("/api-docs")
+                || path.startsWith("/actuator/health");
+    }
+
     private void setAuthentication(UserPrincipal principal,
                                    HttpServletRequest request,
                                    HttpServletResponse response) {
