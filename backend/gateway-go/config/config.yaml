@@ -1,0 +1,6 @@
+# Routes for swagger-doc
+docs_routes:
+  - name: "User Service"
+    gateway_path: "/v3/api-docs/user-service"
+    backend_docs_path: "/api-docs"
+    target_url: "${USER_SERVICE_URL:-http://localhost:8081}"
