@@ -21,6 +21,9 @@ application:
       expiration: 3600000 # 1 час
       refresh-token:
         expiration: 604800000 # 7 дней
+    gateway:
+      header-name: "X-Gateway-Header"
+      header-key: "d2h5eW91cmVhZGluZ3RoaXM="
 
 # Отладка sql-запросов в hibernate и Security внутри Spring
 logging:
