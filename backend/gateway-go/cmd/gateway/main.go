@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"gateway-go/config"
 	"gateway-go/internal/auth"
+	"gateway-go/internal/handler"
 	"gateway-go/internal/middleware"
 	"gateway-go/internal/proxy"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -26,7 +28,7 @@ func initLogger() {
 	slog.SetDefault(logger)
 }
 
-func setupRouter(jwtManager *auth.JwtManager, cfg *config.Config) (http.Handler, error) {
+func setupRouter(jwtManager *auth.JwtManager, cfg *config.Config, isReady *atomic.Bool) (http.Handler, error) {
 	r := chi.NewRouter()
 
 	usersProxy, err := proxy.New(cfg.UserServiceURL)
@@ -34,32 +36,41 @@ func setupRouter(jwtManager *auth.JwtManager, cfg *config.Config) (http.Handler,
 		return nil, fmt.Errorf("failed to init user proxy: %w", err)
 	}
 
+	r.Use(middleware.RecoveryMiddleware)
 	r.Use(middleware.RequestIDMiddleware)
 	r.Use(middleware.LoggingMiddleware)
-	r.Use(middleware.RecoveryMiddleware)
-	r.Use(middleware.JwtAuthMiddleware(jwtManager))
 
-	// Open paths
-	r.Handle("/api/v1/auth/login", usersProxy)
-	r.Handle("/api/v1/auth/register", usersProxy)
-	r.Handle("/api/v1/auth/refresh", usersProxy)
-	r.Handle("/actuator/health", usersProxy)
-	r.Handle("/swagger-ui.html", usersProxy)
-	r.Handle("/swagger-ui/*", usersProxy)
-	r.Handle("/v3/api-docs/*", usersProxy)
-	r.Handle("/webjars/*", usersProxy)
+	healthHandler := handler.NewHandler(isReady)
+	r.Get("/healthz", healthHandler.Healthz)
+	r.Get("/readyz", healthHandler.Readyz)
 
-	// Secured paths
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.RequireAuthMiddleware)
+		r.Use(middleware.JwtAuthMiddleware(jwtManager))
 
-		r.Handle("/api/v1/auth/*", usersProxy)
+		// Open paths
+		r.Handle("/api/v1/auth/login", usersProxy)
+		r.Handle("/api/v1/auth/register", usersProxy)
+		r.Handle("/api/v1/auth/refresh", usersProxy)
+		r.Handle("/actuator/health", usersProxy)
+		r.Handle("/swagger-ui.html", usersProxy)
+		r.Handle("/swagger-ui/*", usersProxy)
+		r.Handle("/v3/api-docs/*", usersProxy)
+		r.Handle("/webjars/*", usersProxy)
+
+		// Secured paths
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireAuthMiddleware)
+
+			r.Handle("/api/v1/auth/*", usersProxy)
+		})
 	})
 
 	return r, nil
 }
 
 func main() {
+	status := &atomic.Bool{}
+
 	initLogger()
 
 	cfg, err := config.Load()
@@ -76,7 +87,7 @@ func main() {
 
 	serverAddr := ":" + cfg.Port
 
-	r, err := setupRouter(jwtManager, cfg)
+	r, err := setupRouter(jwtManager, cfg, status)
 	if err != nil {
 		slog.Error("Failed to init router", "error", err)
 		os.Exit(1)
@@ -103,8 +114,13 @@ func main() {
 		}
 	}()
 
+	status.Store(true)
+
 	<-stopCtx.Done()
 	slog.Info("Shutting down gateway gracefully...")
+
+	status.Store(false)
+	time.Sleep(2 * time.Second)
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
