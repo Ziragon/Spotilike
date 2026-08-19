@@ -10,6 +10,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type CorsSet struct {
+	AllowedOrigins   []string `yaml:"allowed_origins"`
+	AllowCredentials bool     `yaml:"allow_credentials"`
+}
+
 type DocsRoute struct {
 	Name            string `yaml:"name"`
 	GatewayPath     string `yaml:"gateway_path"`
@@ -23,6 +28,7 @@ type Config struct {
 	JWTSecret      string      `env:"JWT_SECRET_KEY" env-default:"bG9jYWwtZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE="`
 	UserServiceURL string      `env:"USER_SERVICE_URL" env-default:"http://localhost:8081"`
 	DocsRoutes     []DocsRoute `yaml:"docs_routes"`
+	Cors           CorsSet     `yaml:"cors"`
 }
 
 // expandEnv helps to parse ${VAR:-default} syntax
