@@ -17,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -45,6 +46,9 @@ class AuthControllerIT {
     private AuthResponse authResponse;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${application.security.gateway.header-name}") String headerName;
+    @Value("${application.security.gateway.header-key}") String headerKey;
 
     @BeforeEach
     void setUp() {
@@ -78,6 +82,7 @@ class AuthControllerIT {
 
             mockMvc.perform(post("/api/v1/auth/register")
                             .header("X-User-Anonymous", "true")
+                            .header(headerName, headerKey)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
                                     new RegisterRequest("test@mail.com", "pass1234", "nick"))))
@@ -95,6 +100,7 @@ class AuthControllerIT {
             void shouldReturn400OnInvalidEmail() throws Exception {
                 mockMvc.perform(post("/api/v1/auth/register")
                                 .header("X-User-Anonymous", "true")
+                                .header(headerName, headerKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                         new RegisterRequest("not-email", "pass1234", "nick"))))
@@ -106,6 +112,7 @@ class AuthControllerIT {
             void shouldReturn400OnBlankPassword() throws Exception {
                 mockMvc.perform(post("/api/v1/auth/register")
                                 .header("X-User-Anonymous", "true")
+                                .header(headerName, headerKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                         new RegisterRequest("test@mail.com", "", "nick"))))
@@ -117,6 +124,7 @@ class AuthControllerIT {
             void shouldReturn400OnBlankUsername() throws Exception {
                 mockMvc.perform(post("/api/v1/auth/register")
                                 .header("X-User-Anonymous", "true")
+                                .header(headerName, headerKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                         new RegisterRequest("test@mail.com", "pass123", ""))))
@@ -136,6 +144,7 @@ class AuthControllerIT {
 
                 mockMvc.perform(post("/api/v1/auth/register")
                                 .header("X-User-Anonymous", "true")
+                                .header(headerName, headerKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                         new RegisterRequest("test@mail.com", "pass1234", "nick"))))
@@ -156,6 +165,7 @@ class AuthControllerIT {
 
             mockMvc.perform(post("/api/v1/auth/login")
                             .header("X-User-Anonymous", "true")
+                            .header(headerName, headerKey)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
                                     new LoginRequest("test@mail.com", "pass123"))))
@@ -173,6 +183,7 @@ class AuthControllerIT {
             void shouldReturn400OnInvalidEmail() throws Exception {
                 mockMvc.perform(post("/api/v1/auth/login")
                                 .header("X-User-Anonymous", "true")
+                                .header(headerName, headerKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                         new LoginRequest("not-email", "pass123"))))
@@ -184,6 +195,7 @@ class AuthControllerIT {
             void shouldReturn400OnBlankPassword() throws Exception {
                 mockMvc.perform(post("/api/v1/auth/login")
                                 .header("X-User-Anonymous", "true")
+                                .header(headerName, headerKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                         new LoginRequest("test@mail.com", ""))))
@@ -203,6 +215,7 @@ class AuthControllerIT {
 
                 mockMvc.perform(post("/api/v1/auth/login")
                                 .header("X-User-Anonymous", "true")
+                                .header(headerName, headerKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                         new LoginRequest("test@mail.com", "wrong"))))
@@ -217,6 +230,7 @@ class AuthControllerIT {
 
                 mockMvc.perform(post("/api/v1/auth/login")
                                 .header("X-User-Anonymous", "true")
+                                .header(headerName, headerKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                         new LoginRequest("test@mail.com", "pass"))))

@@ -9,6 +9,7 @@ import com.spotilike.userservice.service.JwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -31,6 +32,9 @@ class HeaderAuthenticationFilterIT {
     @MockitoBean
     private JwtService jwtService;
 
+    @Value("${application.security.gateway.header-name}") String headerName;
+    @Value("${application.security.gateway.header-key}") String headerKey;
+
     @Test
     @DisplayName("Access denied (Without Gateway headers)")
     void smoke_shouldRejectDirectAccess() throws Exception {
@@ -45,7 +49,8 @@ class HeaderAuthenticationFilterIT {
                         .header("X-User-Anonymous", "false")
                         .header("X-User-Id", "42")
                         .header("X-User-Email", "smoke@test.ru")
-                        .header("X-User-Roles", "ROLE_USER"))
+                        .header("X-User-Roles", "ROLE_USER")
+                        .header(headerName, headerKey))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Hello, you're auth user: smoke@test.ru"));
     }
