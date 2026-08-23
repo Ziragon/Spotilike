@@ -1,0 +1,69 @@
+name: Spotilike Go Services CI/CD
+
+on:
+  push:
+    branches: [ "dev", "main" ]
+    paths:
+      - 'gateway-go/**'
+      - '.github/workflows/go-gateway-ci.yml'
+  pull_request:
+    branches: [ "dev", "main" ]
+    paths:
+      - 'gateway-go/**'
+      - '.github/workflows/go-gateway-ci.yml'
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/gateway-go
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache-dependency-path: gateway-go/go.sum
+
+      - name: Vet
+        working-directory: gateway-go
+        run: go vet ./...
+
+      - name: Test
+        working-directory: gateway-go
+        run: go test -race -cover ./...
+
+  build-and-push:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./gateway-go
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}

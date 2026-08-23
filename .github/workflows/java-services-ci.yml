@@ -1,4 +1,4 @@
-name: Spotilike CI/CD
+name: Spotilike Java Services CI/CD
 
 on:
   push:
