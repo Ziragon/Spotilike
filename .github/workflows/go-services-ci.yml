@@ -5,12 +5,12 @@ on:
     branches: [ "dev", "main" ]
     paths:
       - 'backend/gateway-go/**'
-      - '.github/workflows/go-gateway-ci.yml'
+      - '.github/workflows/go-services-ci.yml'
   pull_request:
     branches: [ "dev", "main" ]
     paths:
       - 'backend/gateway-go/**'
-      - '.github/workflows/go-gateway-ci.yml'
+      - '.github/workflows/go-services-ci.yml'
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/gateway-go
