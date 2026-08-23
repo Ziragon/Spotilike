@@ -5,6 +5,9 @@ application:
       expiration: 3600000
       refresh-token:
         expiration: 604800000
+    gateway:
+      header-name: "X-Gateway-Header"
+      header-key: "testgatewayheaderkey"
 
 spring:
   datasource:
