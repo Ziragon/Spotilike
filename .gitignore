@@ -55,3 +55,6 @@ Thumbs.db
 *.m3u8
 /temp_data/
 /output/
+
+# --- Go Specific ---
+*.iml
