@@ -3,6 +3,7 @@ package com.spotilike.userservice.config;
 import com.spotilike.shared.security.GatewaySecretFilter;
 import com.spotilike.shared.security.HeaderAuthenticationFilter;
 import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,8 +36,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    public GatewaySecretFilter gatewaySecretFilter() {
-        return new GatewaySecretFilter();
+    public GatewaySecretFilter gatewaySecretFilter(
+            @Value("${application.security.gateway.header-name}") String gatewayHeaderName,
+            @Value("${application.security.gateway.header-key}") String expectedSecret) {
+        return new GatewaySecretFilter(gatewayHeaderName, expectedSecret);
     }
 
     @Bean
