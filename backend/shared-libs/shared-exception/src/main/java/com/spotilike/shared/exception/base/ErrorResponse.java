@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 
@@ -19,12 +20,12 @@ public class ErrorResponse {
     private final String path;
     private final Map<String, Object> details;
 
-    public static ErrorResponse from(BaseException ex, String path) {
+    public static ErrorResponse from(BaseException ex, String path, Clock clock) {
         return ErrorResponse.builder()
                 .code(ex.getErrorCode())
                 .message(ex.getMessage())
                 .status(ex.getHttpStatus().value())
-                .timestamp(ex.getTimestamp())
+                .timestamp(Instant.now(clock))
                 .path(path)
                 .details(ex.getDetails())
                 .build();

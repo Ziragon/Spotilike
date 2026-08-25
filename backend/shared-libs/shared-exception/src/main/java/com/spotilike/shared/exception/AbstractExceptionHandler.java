@@ -33,7 +33,7 @@ public abstract class AbstractExceptionHandler extends ResponseEntityExceptionHa
         logBaseException(ex);
         return ResponseEntity
                 .status(ex.getHttpStatus())
-                .body(ErrorResponse.from(ex, request.getRequestURI()));
+                .body(ErrorResponse.from(ex, request.getRequestURI(), getErrorFactory().getClock()));
     }
 
     // ConstraintViolationException (@Validated)

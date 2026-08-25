@@ -2,7 +2,6 @@ package com.spotilike.shared.exception.base;
 
 import lombok.Getter;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
@@ -10,7 +9,6 @@ import java.util.Map;
 public class BaseException extends RuntimeException {
 
     private final ErrorType errorType;
-    private final Instant timestamp;
     private final transient Map<String, Object> details;
 
     public BaseException(String message, ErrorType errorType) {
@@ -31,7 +29,6 @@ public class BaseException extends RuntimeException {
                          Throwable cause, Map<String, Object> details) {
         super(message, cause);
         this.errorType = errorType;
-        this.timestamp = Instant.now();
         this.details = details != null
                 ? Collections.unmodifiableMap(details)
                 : Collections.emptyMap();
