@@ -4,6 +4,7 @@ import com.spotilike.shared.exception.ErrorResponseFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -39,12 +40,14 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Should handle AccessDeniedException with 403")
+    @DisplayName("403 by AccessDeniedException")
     void shouldHandleAccessDenied() throws Exception {
         mockMvc.perform(get("/access-denied"))
                 .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.code").value("ACCESS_DENIED"))
                 .andExpect(jsonPath("$.message").value("Access denied"))
-                .andExpect(jsonPath("$.path").value("/access-denied"));
+                .andExpect(jsonPath("$.path").value("/access-denied"))
+                .andExpect(jsonPath("$.status").value(403));
     }
 }

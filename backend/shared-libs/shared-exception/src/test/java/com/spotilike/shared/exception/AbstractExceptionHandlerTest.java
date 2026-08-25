@@ -2,6 +2,7 @@ package com.spotilike.shared.exception;
 
 import com.spotilike.shared.exception.base.BaseException;
 import com.spotilike.shared.exception.base.ErrorType;
+import jakarta.validation.ConstraintViolationException;
 import org.apache.catalina.connector.ClientAbortException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -46,6 +48,11 @@ class AbstractExceptionHandlerTest {
         @GetMapping("/system-error")
         void systemError() {
             throw new BaseException("Failure", ErrorType.INTERNAL_ERROR);
+        }
+
+        @GetMapping("/constraint-violation")
+        void constraintViolation() {
+            throw new ConstraintViolationException("Invalid parameter", Set.of());
         }
 
         @GetMapping("/client-abort")
@@ -100,6 +107,19 @@ class AbstractExceptionHandlerTest {
             mockMvc.perform(get("/test/system-error"))
                     .andExpect(status().isInternalServerError())
                     .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"));
+        }
+    }
+
+    @Nested
+    @DisplayName("ConstraintViolationException handling")
+    class ConstraintViolationHandling {
+
+        @Test
+        @DisplayName("Should return 400 for ConstraintViolationException")
+        void shouldHandleConstraintViolation() throws Exception {
+            mockMvc.perform(get("/test/constraint-violation"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.path").value("/test/constraint-violation"));
         }
     }
 
