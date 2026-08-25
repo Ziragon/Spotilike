@@ -18,6 +18,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class RefreshTokenServiceIT extends BaseIT {
@@ -90,24 +91,24 @@ class RefreshTokenServiceIT extends BaseIT {
     @Test
     @DisplayName("Rotation saves family integrity (familyId inherited)")
     void shouldKeepFamilyIdDuringRotation() {
-        // Выдача токена при логине
+
         String t1 = refreshTokenService.createRefreshToken(testUser.getId(), "127.0.0.1", "Device");
         RefreshToken token1 = refreshTokenService.findByToken(t1).orElseThrow();
 
-        // Первая ротация токена
+        // First rotation
         String t2 = refreshTokenService.rotateRefreshToken(t1, "127.0.0.1", "Device");
         RefreshToken token2 = refreshTokenService.findByToken(t2).orElseThrow();
 
-        // Вторая ротация токена
+        // Second rotation
         String t3 = refreshTokenService.rotateRefreshToken(t2, "127.0.0.1", "Device");
         RefreshToken token3 = refreshTokenService.findByToken(t3).orElseThrow();
 
-        // FamilyId корректный у всех токенов
+        // Correct FamilyId
         assertThat(token1.getFamilyId()).isNotNull();
         assertThat(token1.getFamilyId()).isEqualTo(token2.getFamilyId());
         assertThat(token2.getFamilyId()).isEqualTo(token3.getFamilyId());
 
-        // Первые 2 токена помечены Consumed
+        // First 2 tokens marked as consumed
         assertThat(refreshTokenService.findByToken(t1).orElseThrow().getConsumedAt()).isNotNull();
         assertThat(refreshTokenService.findByToken(t2).orElseThrow().getConsumedAt()).isNotNull();
     }
@@ -115,7 +116,7 @@ class RefreshTokenServiceIT extends BaseIT {
     @Test
     @DisplayName("Reuse attack revokes tokens by family")
     void shouldRevokeEntireFamilyOnReuseAttack() {
-        // Токен, который помечен как использованный час назад через consumedAt
+        // Token marked as used hour ago
         RefreshToken stolenToken = RefreshToken.builder()
                 .user(testUser)
                 .familyId(UUID.randomUUID())
@@ -128,14 +129,10 @@ class RefreshTokenServiceIT extends BaseIT {
 
         refreshTokenRepository.save(stolenToken);
 
-        // Использование токена вне Grace Period
-        try {
-            refreshTokenService.rotateRefreshToken("stolen-clear-token", "127.0.0.1", "Device");
-        } catch (TokenRevokedException _) {
-            // Ожидаемое поведение
-        }
+        assertThatThrownBy(() -> refreshTokenService.rotateRefreshToken("stolen-clear-token", "127.0.0.1", "Device"))
+                .isInstanceOf(TokenRevokedException.class);
 
-        // Токен должен быть отозван
+        // Token must be revoked
         RefreshToken dbToken = refreshTokenRepository.findById(stolenToken.getId()).orElseThrow();
         assertThat(dbToken.getRevokedAt()).isNotNull();
     }
