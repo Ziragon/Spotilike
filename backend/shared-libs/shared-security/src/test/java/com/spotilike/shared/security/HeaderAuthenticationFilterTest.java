@@ -30,7 +30,7 @@ class HeaderAuthenticationFilterTest {
 
     @Nested
     @DisplayName("Bypass Gateway without X-User-Anonymous")
-    class BypassGateway {
+    class BypassFilter {
 
         @Test
         @DisplayName("401 with JSON")
