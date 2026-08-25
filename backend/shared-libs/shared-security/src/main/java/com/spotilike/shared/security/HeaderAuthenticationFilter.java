@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,14 +13,13 @@ import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-public class HeaderAuthenticationFilter extends OncePerRequestFilter {
+public class HeaderAuthenticationFilter extends AbstractSecurityClass {
 
     private final SecurityContextHolderStrategy securityContextHolderStrategy =
             SecurityContextHolder.getContextHolderStrategy();
@@ -39,7 +37,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
         String anonymousHeader = request.getHeader("X-User-Anonymous");
 
-        // Обход гейтвея - аноним хедер не может быть null
+        // Anonymous header cannot be empty
         if (anonymousHeader == null) {
             log.error("Security violation: Request bypassed Gateway (missing X-User-Anonymous header)");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -59,13 +57,11 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Аноним запрос без токена
         if ("true".equals(anonymousHeader)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Обработка хедеров
         String userIdHeader = request.getHeader("X-User-Id");
         String email = request.getHeader("X-User-Email");
         String rolesHeader = request.getHeader("X-User-Roles");
@@ -76,17 +72,15 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Валидация поступающего userId
         int userId;
         try {
             userId = Integer.parseInt(userIdHeader);
         } catch (NumberFormatException _) {
             log.warn("Invalid X-User-Id header: {}", userIdHeader);
-            sendError(response);
+            this.writeUnauthorized(response, "Invalid internal credentials");
             return;
         }
 
-        // Парсинг ролей
         List<String> roles = (rolesHeader != null && !rolesHeader.isBlank())
                 ? Arrays.asList(rolesHeader.split(","))
                 : List.of();
@@ -95,14 +89,6 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         setAuthentication(principal, request, response);
 
         filterChain.doFilter(request, response);
-    }
-
-    @Override
-    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-        String path = request.getRequestURI();
-
-        return path.startsWith("/api-docs")
-                || path.startsWith("/actuator/health");
     }
 
     private void setAuthentication(UserPrincipal principal,
@@ -120,17 +106,5 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         context.setAuthentication(authentication);
         securityContextHolderStrategy.setContext(context);
         securityContextRepository.saveContext(context, request, response);
-    }
-
-    // Отправка ответа в JSON
-    private void sendError(HttpServletResponse response) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(
-                """
-                {"code":"UNAUTHORIZED","message":"%s","status":%d}
-                """.formatted("Invalid internal credentials", HttpServletResponse.SC_UNAUTHORIZED).strip()
-        );
     }
 }
