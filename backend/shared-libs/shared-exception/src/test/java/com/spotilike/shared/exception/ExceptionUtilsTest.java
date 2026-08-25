@@ -101,6 +101,12 @@ class ExceptionUtilsTest {
             assertThat(ExceptionUtils.isClientAbort(new RuntimeException("error"))).isFalse();
             assertThat(ExceptionUtils.isClientAbort(new IOException((String) null))).isFalse();
         }
+
+        @Test
+        @DisplayName("Should be case-sensitive when matching abort keywords")
+        void shouldNotMatchDifferentCase() {
+            assertThat(ExceptionUtils.isClientAbort(new IOException("broken pipe"))).isFalse();
+        }
     }
 
     @Nested
