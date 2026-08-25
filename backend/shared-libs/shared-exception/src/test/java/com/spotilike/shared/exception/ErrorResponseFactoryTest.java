@@ -9,16 +9,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -70,15 +70,16 @@ class ErrorResponseFactoryTest {
         @Test
         @DisplayName("Should build response with field violations")
         void shouldBuildWithViolations() {
-            var ex = new ConstraintViolationException(Set.of(
-                    mockViolation()
-            ));
+            var ex = new ConstraintViolationException(Set.of(mockViolation()));
 
             var response = factory.buildValidationResponse(ex, "/api/register");
+            var errors = extractFieldErrors(response);
 
             assertThat(response.getCode()).isEqualTo("VALIDATION_ERROR");
             assertThat(response.getStatus()).isEqualTo(400);
-            assertThat(extractFieldErrors(response)).hasSize(1);
+            assertThat(errors).hasSize(1);
+            assertThat(errors.getFirst()).containsEntry("field", "email");
+            assertThat(errors.getFirst()).containsEntry("message", "must not be blank");
         }
 
         private ConstraintViolation<?> mockViolation() {
@@ -96,18 +97,19 @@ class ErrorResponseFactoryTest {
     class BuildMethodArgumentResponse {
 
         @Test
-        @DisplayName("Should hide sensitive field values")
-        void shouldHideSensitiveFields() throws Exception {
+        @DisplayName("Should hide fields containing sensitive keywords")
+        void shouldHideFieldsContainingSensitiveKeywords() throws Exception {
             var ex = createException(List.of(
-                    new FieldError("dto", "email", "bad@", false, null, null, "Invalid"),
-                    new FieldError("dto", "password", "123", false, null, null, "Too short")
+                    new FieldError("dto", "newPassword", "abc", false, null, null, "Too short"),
+                    new FieldError("dto", "confirmPassword", "abc", false, null, null, "Mismatch"),
+                    new FieldError("dto", "username", "ok", false, null, null, null)
             ));
 
-            var response = factory.buildValidationResponse(ex, "/api/auth");
-            var errors = extractFieldErrors(response);
+            var errors = extractFieldErrors(factory.buildValidationResponse(ex, "/api"));
 
-            assertThat(errors.get(0)).containsKey("rejected");
-            assertThat(errors.get(1)).doesNotContainKey("rejected");
+            assertThat(errors.get(0)).doesNotContainKey("rejected"); // newPassword
+            assertThat(errors.get(1)).doesNotContainKey("rejected"); // confirmPassword
+            assertThat(errors.get(2)).containsKey("rejected"); // username
         }
 
         @Test
@@ -119,6 +121,28 @@ class ErrorResponseFactoryTest {
 
             var errors = extractFieldErrors(factory.buildValidationResponse(ex, "/api"));
             assertThat(errors.getFirst()).containsEntry("message", "Invalid value");
+        }
+
+        @Test
+        @DisplayName("Should set VALIDATION_ERROR code and 400 status")
+        void shouldSetValidationErrorCodeAndStatus() throws Exception {
+            var ex = createException(List.of(
+                    new FieldError("dto", "email", "bad@", false, null, null, "Invalid")
+            ));
+
+            var response = factory.buildValidationResponse(ex, "/api/auth");
+
+            assertThat(response.getCode()).isEqualTo("VALIDATION_ERROR");
+            assertThat(response.getStatus()).isEqualTo(400);
+        }
+
+        @Test
+        @DisplayName("Should set generic 'Validation failed' message")
+        void shouldSetGenericValidationMessage() throws Exception {
+            var ex = createException(List.of(new FieldError("dto", "email", "bad@", false, null, null, "Invalid")));
+            var response = factory.buildValidationResponse(ex, "/api");
+
+            assertThat(response.getMessage()).isEqualTo("Validation failed");
         }
 
         private MethodArgumentNotValidException createException(List<FieldError> errors) throws Exception {
@@ -136,51 +160,87 @@ class ErrorResponseFactoryTest {
     @DisplayName("buildSpringMvcResponse()")
     class BuildSpringMvcResponse {
 
-        @ParameterizedTest
-        @CsvSource({
-                "404, RESOURCE_NOT_FOUND",
-                "403, ACCESS_DENIED",
-                "405, METHOD_NOT_ALLOWED",
-                "415, UNSUPPORTED_MEDIA_TYPE",
-                "400, VALIDATION_ERROR"
-        })
-        @DisplayName("Should resolve correct error codes for HTTP statuses")
-        void shouldResolveCorrectCodes(int status, String expectedCode) {
-            var response = factory.buildSpringMvcResponse(
-                    new RuntimeException(), HttpStatusCode.valueOf(status), "/api");
+        @Test
+        @DisplayName("Should populate status, path and timestamp correctly")
+        void shouldPopulateCommonFields() {
+            var ex = new HttpRequestMethodNotSupportedException("PATCH");
+            var response = factory.buildSpringMvcResponse(ex, HttpStatus.METHOD_NOT_ALLOWED, "/api/orders");
 
-            assertThat(response.getCode()).isEqualTo(expectedCode);
+            assertThat(response.getStatus()).isEqualTo(405);
+            assertThat(response.getPath()).isEqualTo("/api/orders");
+            assertThat(response.getTimestamp()).isEqualTo(FIXED_INSTANT);
         }
 
         @Test
-        @DisplayName("Should resolve messages for specific exceptions")
-        void shouldResolveMessages() {
-            assertMessage(
-                    new HttpMessageNotReadableException("", new MockHttpInputMessage(new byte[0])),
-                    "Malformed JSON request");
-            assertMessage(
-                    new HttpRequestMethodNotSupportedException("PATCH"),
-                    "Method PATCH is not supported");
-            assertMessage(
-                    new MissingServletRequestParameterException("page", "int"),
-                    "Missing required parameter: page");
-            assertMessage(
-                    new NoResourceFoundException(HttpMethod.GET, "/unknown", "No static resource"),
-                    "Endpoint not found");
+        @DisplayName("Should resolve code and message for HttpMessageNotReadableException")
+        void shouldResolveMalformedJson() {
+            var ex = new HttpMessageNotReadableException("", new MockHttpInputMessage(new byte[0]));
+            var response = factory.buildSpringMvcResponse(ex, HttpStatus.BAD_REQUEST, "/api");
+
+            assertThat(response.getCode()).isEqualTo("MALFORMED_REQUEST");
+            assertThat(response.getMessage()).isEqualTo("Malformed JSON request");
         }
 
         @Test
-        @DisplayName("Should return default message for unknown exception types")
-        void shouldReturnDefaultMessage() {
+        @DisplayName("Should resolve code and message for HttpRequestMethodNotSupportedException")
+        void shouldResolveMethodNotAllowed() {
+            var ex = new HttpRequestMethodNotSupportedException("PATCH");
+            var response = factory.buildSpringMvcResponse(ex, HttpStatus.METHOD_NOT_ALLOWED, "/api");
+
+            assertThat(response.getCode()).isEqualTo("METHOD_NOT_ALLOWED");
+            assertThat(response.getMessage()).isEqualTo("Method PATCH is not supported");
+        }
+
+        @Test
+        @DisplayName("Should resolve code and message for MissingServletRequestParameterException")
+        void shouldResolveMissingParameter() {
+            var ex = new MissingServletRequestParameterException("page", "int");
+            var response = factory.buildSpringMvcResponse(ex, HttpStatus.BAD_REQUEST, "/api");
+
+            assertThat(response.getCode()).isEqualTo("MISSING_PARAMETER");
+            assertThat(response.getMessage()).isEqualTo("Missing required parameter: page");
+        }
+
+        @Test
+        @DisplayName("Should resolve code and message for NoResourceFoundException")
+        void shouldResolveEndpointNotFound() {
+            var ex = new NoResourceFoundException(HttpMethod.GET, "/unknown", "No static resource");
+            var response = factory.buildSpringMvcResponse(ex, HttpStatus.NOT_FOUND, "/api");
+
+            assertThat(response.getCode()).isEqualTo("RESOURCE_NOT_FOUND");
+            assertThat(response.getMessage()).isEqualTo("Endpoint not found");
+        }
+
+        @Test
+        @DisplayName("Should resolve code and message for TypeMismatchException")
+        void shouldResolveTypeMismatch() {
+            var ex = mock(TypeMismatchException.class);
+            when(ex.getPropertyName()).thenReturn("id");
+            var response = factory.buildSpringMvcResponse(ex, HttpStatus.BAD_REQUEST, "/api");
+
+            assertThat(response.getCode()).isEqualTo("TYPE_MISMATCH");
+            assertThat(response.getMessage()).isEqualTo("Invalid value for parameter: id");
+        }
+
+        @Test
+        @DisplayName("Should fall back to default code/message for unknown exception types")
+        void shouldResolveDefault() {
             var response = factory.buildSpringMvcResponse(
                     new IllegalStateException(), HttpStatus.BAD_REQUEST, "/api");
 
+            assertThat(response.getCode()).isEqualTo("BAD_REQUEST");
             assertThat(response.getMessage()).isEqualTo("Bad request");
         }
 
-        private void assertMessage(Exception ex, String expected) {
-            var response = factory.buildSpringMvcResponse(ex, HttpStatus.BAD_REQUEST, "/api");
-            assertThat(response.getMessage()).isEqualTo(expected);
+        @Test
+        @DisplayName("Should resolve code and message for HttpMediaTypeNotSupportedException")
+        void shouldResolveUnsupportedMediaType() {
+            var ex = mock(HttpMediaTypeNotSupportedException.class);
+            when(ex.getContentType()).thenReturn(MediaType.TEXT_PLAIN);
+            var response = factory.buildSpringMvcResponse(ex, HttpStatus.UNSUPPORTED_MEDIA_TYPE, "/api");
+
+            assertThat(response.getCode()).isEqualTo("UNSUPPORTED_MEDIA_TYPE");
+            assertThat(response.getMessage()).contains("is not supported");
         }
     }
 
