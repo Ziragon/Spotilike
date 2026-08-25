@@ -26,6 +26,7 @@ public final class ExceptionUtils {
         return lastDot >= 0 ? fullPath.substring(lastDot + 1) : fullPath;
     }
 
+    // Works only on ENG locale
     public static boolean isClientAbort(Exception ex) {
         if (ex instanceof ClientAbortException) {
             return true;
