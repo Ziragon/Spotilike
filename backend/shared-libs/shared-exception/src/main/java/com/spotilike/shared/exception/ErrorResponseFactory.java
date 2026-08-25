@@ -2,6 +2,7 @@ package com.spotilike.shared.exception;
 
 import com.spotilike.shared.exception.base.ErrorResponse;
 import com.spotilike.shared.exception.base.ErrorType;
+import com.spotilike.shared.exception.base.SpringMVCErrorType;
 import jakarta.validation.ConstraintViolationException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -61,8 +62,9 @@ public class ErrorResponseFactory {
     }
 
     public ErrorResponse buildSpringMvcResponse(Exception ex, HttpStatusCode statusCode, String path) {
+        SpringMVCErrorType type = resolveType(ex);
         return ErrorResponse.builder()
-                .code(resolveCode(statusCode))
+                .code(type.getCode())
                 .message(resolveMessage(ex))
                 .status(statusCode.value())
                 .timestamp(Instant.now(clock))
@@ -81,17 +83,19 @@ public class ErrorResponseFactory {
                 .build();
     }
 
+    // Maps error fields and marks with rejected sensitive fields
     private Map<String, String> mapFieldError(FieldError error) {
         Map<String, String> entry = new LinkedHashMap<>();
         entry.put("field", error.getField());
         entry.put("message", Objects.requireNonNullElse(error.getDefaultMessage(), "Invalid value"));
 
-        if (!SENSITIVE_FIELDS.contains(error.getField().toLowerCase())) {
+        if (!isSensitive(error.getField())) {
             entry.put("rejected", String.valueOf(error.getRejectedValue()));
         }
         return entry;
     }
 
+    // Returns message depending on the exception
     private String resolveMessage(Exception ex) {
         return switch (ex) {
             case HttpMessageNotReadableException _ -> "Malformed JSON request";
@@ -104,14 +108,22 @@ public class ErrorResponseFactory {
         };
     }
 
-    private String resolveCode(HttpStatusCode statusCode) {
-        return switch (statusCode.value()) {
-            case 404 -> ErrorType.RESOURCE_NOT_FOUND.getCode();
-            case 403 -> ErrorType.ACCESS_DENIED.getCode();
-            case 405 -> "METHOD_NOT_ALLOWED";
-            case 415 -> "UNSUPPORTED_MEDIA_TYPE";
-            case 503 -> "SERVICE_UNAVAILABLE";
-            default  -> ErrorType.VALIDATION_ERROR.getCode();
+    // Returns custom SpringMVCErrorType depending on exception
+    private SpringMVCErrorType resolveType(Exception ex) {
+        return switch (ex) {
+            case HttpMessageNotReadableException _ -> SpringMVCErrorType.MALFORMED_JSON;
+            case HttpRequestMethodNotSupportedException _ -> SpringMVCErrorType.METHOD_NOT_ALLOWED;
+            case HttpMediaTypeNotSupportedException _ -> SpringMVCErrorType.UNSUPPORTED_MEDIA_TYPE;
+            case MissingServletRequestParameterException _ -> SpringMVCErrorType.MISSING_PARAMETER;
+            case NoResourceFoundException _ -> SpringMVCErrorType.ENDPOINT_NOT_FOUND;
+            case TypeMismatchException _ -> SpringMVCErrorType.TYPE_MISMATCH;
+            default -> SpringMVCErrorType.BAD_REQUEST;
         };
+    }
+
+    // Sensitive fields check method
+    private boolean isSensitive(String fieldName) {
+        String lower = fieldName.toLowerCase();
+        return SENSITIVE_FIELDS.stream().anyMatch(lower::contains);
     }
 }
