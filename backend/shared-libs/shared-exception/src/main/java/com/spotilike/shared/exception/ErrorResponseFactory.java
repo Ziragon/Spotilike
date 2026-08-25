@@ -3,6 +3,7 @@ package com.spotilike.shared.exception;
 import com.spotilike.shared.exception.base.ErrorResponse;
 import com.spotilike.shared.exception.base.ErrorType;
 import jakarta.validation.ConstraintViolationException;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ import java.util.*;
 
 @Component
 @RequiredArgsConstructor
+@Getter
 public class ErrorResponseFactory {
 
     private static final Set<String> SENSITIVE_FIELDS =
