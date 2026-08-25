@@ -47,6 +47,7 @@ class GatewaySecretFilterTest {
     @DisplayName("Incorrect header")
     class IncorrectHeader {
         @Test
+        @DisplayName("401 without header")
         void shouldReturn401WithoutHeader() throws Exception {
             filter.doFilter(request, response, filterChain);
 
@@ -55,6 +56,7 @@ class GatewaySecretFilterTest {
         }
 
         @Test
+        @DisplayName("401 with incorrect key")
         void shouldReturn401WithIncorrectKey() throws Exception {
             request.addHeader(HEADER_NAME, "Incorrect key");
 
@@ -65,6 +67,7 @@ class GatewaySecretFilterTest {
         }
 
         @Test
+        @DisplayName("401 with empty key")
         void shouldReturn401WithEmptyKey() throws Exception {
             request.addHeader(HEADER_NAME, "");
 
