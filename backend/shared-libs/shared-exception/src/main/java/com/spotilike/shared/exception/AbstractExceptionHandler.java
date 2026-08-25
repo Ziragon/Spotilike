@@ -71,7 +71,7 @@ public abstract class AbstractExceptionHandler extends ResponseEntityExceptionHa
                         HttpStatus.INTERNAL_SERVER_ERROR.value(), path));
     }
 
-    // Spring MVC ошибки
+    // Spring MVC errors
     @Override
     protected @Nullable ResponseEntity<@NonNull Object> handleExceptionInternal(
             @NonNull Exception ex,
@@ -107,7 +107,7 @@ public abstract class AbstractExceptionHandler extends ResponseEntityExceptionHa
                 .body(getErrorFactory().buildSpringMvcResponse(ex, statusCode, path));
     }
 
-    // Логирование
+    // Logs
     protected void logBaseException(BaseException ex) {
         switch (ex.getErrorType().getCategory()) {
             case AUTH   -> log.warn(LOG_CODE_MESSAGE, ex.getErrorCode(), ex.getMessage());
