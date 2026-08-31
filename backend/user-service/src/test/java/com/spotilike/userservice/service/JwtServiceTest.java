@@ -26,9 +26,8 @@ class JwtServiceTest {
     }
 
     @Test
-    @DisplayName("Должен сгенерировать токен с правильным контрактом для Gateway")
+    @DisplayName("Should generate valid token for Gateway")
     void shouldGenerateValidToken() {
-        // Given
         User user = User.builder()
                 .id(1L)
                 .username("testUser")
@@ -36,10 +35,8 @@ class JwtServiceTest {
                 .roles(Set.of(new Role(1L, RoleName.ROLE_USER)))
                 .build();
 
-        // When
         String token = jwtService.generateToken(user);
 
-        // Then
         assertThat(jwtService.extractEmail(token)).isEqualTo("test@mail.com");
 
         Integer userId = jwtService.extractClaim(token, c -> c.get("userId", Integer.class));
@@ -51,9 +48,8 @@ class JwtServiceTest {
     }
 
     @Test
-    @DisplayName("Должен вернуть true по корректному токену")
+    @DisplayName("Should return true with correct token")
     void isTokenValid_ShouldReturnTrue_WhenTokenCorrect() {
-        // Given
         String username = "jane_doe";
         User user = User.builder()
                 .id(1L)
@@ -67,17 +63,14 @@ class JwtServiceTest {
         UserDetails userDetails = mock(UserDetails.class);
         when(userDetails.getUsername()).thenReturn(username);
 
-        // When
         boolean isValid = jwtService.isTokenValid(token, userDetails);
 
-        // Then
         assertThat(isValid).isTrue();
     }
 
     @Test
-    @DisplayName("Должен вернуть false, если email в токене не совпадает с пользователем")
+    @DisplayName("Should return false, if email in token does not match to user")
     void isTokenValid_ShouldReturnFalse_WhenEmailDoesNotMatch() {
-        // Given
         User user = User.builder()
                 .id(1L)
                 .email("owner@mail.com")
@@ -89,26 +82,21 @@ class JwtServiceTest {
         UserDetails wrongUser = mock(UserDetails.class);
         when(wrongUser.getUsername()).thenReturn("attacker@mail.com");
 
-        // When
         boolean isValid = jwtService.isTokenValid(token, wrongUser);
 
-        // Then
         assertThat(isValid).isFalse();
     }
 
     @Test
-    @DisplayName("Должен извлечь userId из claims")
+    @DisplayName("Should extract userId from claims")
     void shouldExtractUserIdFromClaims() {
-        // Given
         User user = User.builder()
                 .id(42L).username("user").roles(Set.of()).build();
         String token = jwtService.generateToken(user);
 
-        // When
         Long userId = jwtService.extractClaim(token,
                 claims -> claims.get("userId", Long.class));
 
-        // Then
         assertThat(userId).isEqualTo(42L);
     }
 }

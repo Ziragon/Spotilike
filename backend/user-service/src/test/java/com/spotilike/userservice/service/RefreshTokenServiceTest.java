@@ -35,7 +35,7 @@ class RefreshTokenServiceTest {
     private static final Instant FIXED_INSTANT =
             Instant.parse("2025-01-15T12:00:00Z");
     private static final ZoneId ZONE = ZoneId.of("UTC");
-    private static final long REFRESH_EXPIRATION_MS = 604_800_000L; // 7 дней
+    private static final long REFRESH_EXPIRATION_MS = 604_800_000L; // 7 days
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
@@ -50,7 +50,7 @@ class RefreshTokenServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Фиксированные часы
+        // Fixed clocks
         Clock fixedClock = Clock.fixed(FIXED_INSTANT, ZONE);
         ReflectionTestUtils.setField(refreshTokenService, "clock", fixedClock);
         ReflectionTestUtils.setField(refreshTokenService, "refreshExpiration", REFRESH_EXPIRATION_MS);
@@ -103,18 +103,15 @@ class RefreshTokenServiceTest {
         @Test
         @DisplayName("Revokes old tokens on same device")
         void shouldRevokeOldTokensOnSameDevice() {
-            // Given
             when(userRepository.findById(1L))
                     .thenReturn(Optional.of(testUser));
             when(refreshTokenRepository
                     .revokeByUserIdAndDeviceInfo(1L, "Same-Device"))
                     .thenReturn(1);
 
-            // When
             refreshTokenService
                     .createRefreshToken(1L, "127.0.0.1", "Same-Device");
 
-            // Then
             verify(refreshTokenRepository)
                     .revokeByUserIdAndDeviceInfo(1L, "Same-Device");
         }
@@ -122,11 +119,9 @@ class RefreshTokenServiceTest {
         @Test
         @DisplayName("Throws UserNotFoundException for user who does not exist")
         void shouldThrowWhenUserNotFound() {
-            // Given
             when(userRepository.findById(999L))
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> refreshTokenService
                     .createRefreshToken(999L, "127.0.0.1", "Device"))
                     .isInstanceOf(UserNotFoundException.class);
@@ -180,7 +175,6 @@ class RefreshTokenServiceTest {
         @Test
         @DisplayName("Token revokes right now - valid")
         void shouldBeValidWhenExpiresExactlyNow() {
-            // Given
             String clearToken = "edge-token";
             RefreshToken token = buildToken(clearToken, null, now());
 
@@ -188,22 +182,18 @@ class RefreshTokenServiceTest {
                     .findByTokenHash(TokenHashUtil.hash(clearToken)))
                     .thenReturn(Optional.of(token));
 
-            // When
             RefreshToken result = refreshTokenService
                     .validateRefreshToken(null, clearToken);
 
-            // Then
             assertThat(result).isEqualTo(token);
         }
 
         @Test
         @DisplayName("TokenNotFoundException")
         void shouldThrowWhenNotFound() {
-            // Given
             when(refreshTokenRepository.findByTokenHash(anyString()))
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> refreshTokenService
                     .validateRefreshToken(null, "unknown-token"))
                     .isInstanceOf(TokenNotFoundException.class);
@@ -231,14 +221,11 @@ class RefreshTokenServiceTest {
         @Test
         @DisplayName("Non-existing token does not throws or save anything")
         void shouldDoNothingWhenTokenNotFound() {
-            // Given
             when(refreshTokenRepository.findByTokenHash(anyString()))
                     .thenReturn(Optional.empty());
 
-            // When
             refreshTokenService.revokeToken("nonexistent");
 
-            // Then
             verify(refreshTokenRepository, never()).save(any());
         }
     }
@@ -250,14 +237,11 @@ class RefreshTokenServiceTest {
         @Test
         @DisplayName("Delegates the call into repository")
         void shouldDelegateToRepository() {
-            // Given
             when(refreshTokenRepository.revokeAllByUserId(1L))
                     .thenReturn(3);
 
-            // When
             refreshTokenService.revokeAllUserTokens(1L);
 
-            // Then
             verify(refreshTokenRepository).revokeAllByUserId(1L);
         }
     }
@@ -279,7 +263,6 @@ class RefreshTokenServiceTest {
             assertThat(newToken).isNotNull();
             assertThat(oldToken.getConsumedAt()).isEqualTo(now());
 
-            // Проверяем, что сохранился и старый (обновленный), и новый токен
             verify(refreshTokenRepository, times(2)).save(any(RefreshToken.class));
         }
 
@@ -289,7 +272,7 @@ class RefreshTokenServiceTest {
             String clearToken = "grace-token";
             RefreshToken oldToken = buildToken(clearToken, null, now().plusHours(1));
 
-            // Grace period - длится 30 сек
+            // Grace period 30 secs
             oldToken.setConsumedAt(now().minusSeconds(10));
 
             when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(oldToken));
@@ -305,7 +288,7 @@ class RefreshTokenServiceTest {
         void shouldRevokeFamilyOnReuseAttack() {
             String clearToken = "stolen-token";
             RefreshToken oldToken = buildToken(clearToken, null, now().plusHours(1));
-            // Не подходит под Grace Period
+            // Don't match for grace period
             oldToken.setConsumedAt(now().minusMinutes(1));
 
             when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(oldToken));
