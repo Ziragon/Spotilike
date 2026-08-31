@@ -47,7 +47,6 @@ dist/
 Thumbs.db
 
 # --- Project Specific (Audio/Media) ---
-# Игнорируем временные аудиофайлы, которые воркер качает или создает локально
 *.mp3
 *.wav
 *.m4a
@@ -69,3 +68,9 @@ Thumbs.db
 
 # mkcert keys
 /docker/certs/
+
+# IntelliJ IDEA Codegeneration
+**/generated/
+**/src/main/generated/
+**/src/test/generated/
+**/out/
