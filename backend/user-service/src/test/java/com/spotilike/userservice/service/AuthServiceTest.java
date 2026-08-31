@@ -60,7 +60,6 @@ class AuthServiceTest {
         @Test
         @DisplayName("Successful registration returns auth response")
         void shouldReturnTokensOnSuccess() {
-            // Given
             when(userService.createUser("test@mail.com", "rawPass", "nick"))
                     .thenReturn(testUser);
             when(jwtService.generateToken(testUser))
@@ -68,12 +67,10 @@ class AuthServiceTest {
             when(refreshTokenService.createRefreshToken(1L, "127.0.0.1", "Device"))
                     .thenReturn("refresh-token");
 
-            // When
             AuthResponse response = authService.register(
                     "test@mail.com", "rawPass", "nick", "127.0.0.1", "Device"
             );
 
-            // Then
             assertThat(response.accessToken()).isEqualTo("access-token");
             assertThat(response.refreshToken()).isEqualTo("refresh-token");
         }
@@ -81,14 +78,12 @@ class AuthServiceTest {
         @Test
         @DisplayName("Delegates user creation in UserService")
         void shouldDelegateUserCreationToUserService() {
-            // Given
             when(userService.createUser(any(), any(), any()))
                     .thenReturn(testUser);
             when(jwtService.generateToken(any())).thenReturn("token");
             when(refreshTokenService.createRefreshToken(any(), any(), any()))
                     .thenReturn("refresh");
 
-            // When
             authService.register("test@mail.com", "rawPass", "nick",
                     "127.0.0.1", "Device");
 
@@ -97,20 +92,17 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Creates refresh-токен with correct ip and device")
+        @DisplayName("Creates refresh-token with correct ip and device")
         void shouldCreateRefreshTokenWithCorrectIpAndDevice() {
-            // Given
             when(userService.createUser(any(), any(), any()))
                     .thenReturn(testUser);
             when(jwtService.generateToken(any())).thenReturn("token");
             when(refreshTokenService.createRefreshToken(any(), any(), any()))
                     .thenReturn("refresh");
 
-            // When
             authService.register("test@mail.com", "rawPass", "nick",
                     "10.0.0.1", "iPhone");
 
-            // Then
             verify(refreshTokenService)
                     .createRefreshToken(1L, "10.0.0.1", "iPhone");
         }
@@ -118,17 +110,14 @@ class AuthServiceTest {
         @Test
         @DisplayName("Throws exception from UserService")
         void shouldPropagateExceptionFromUserService() {
-            // Given
             when(userService.createUser(any(), any(), any()))
                     .thenThrow(new DuplicateEmailException());
 
-            // When & Then
             assertThatThrownBy(() ->
                     authService.register("test@mail.com", "rawPass", "nick",
                             "127.0.0.1", "Device"))
                     .isInstanceOf(DuplicateEmailException.class);
 
-            // Токены не должны создаваться
             verify(jwtService, never()).generateToken(any());
             verify(refreshTokenService, never())
                     .createRefreshToken(any(), any(), any());
@@ -142,7 +131,6 @@ class AuthServiceTest {
         @Test
         @DisplayName("Successful login returns auth response")
         void shouldReturnTokensOnSuccess() {
-            // Given
             when(userService.findByEmail("test@mail.com"))
                     .thenReturn(testUser);
             when(passwordEncoder.matches("rawPass", "hashedPass"))
@@ -152,12 +140,10 @@ class AuthServiceTest {
             when(refreshTokenService.createRefreshToken(1L, "127.0.0.1", "Device"))
                     .thenReturn("refresh-token");
 
-            // When
             AuthResponse response = authService.login(
                     "test@mail.com", "rawPass", "127.0.0.1", "Device"
             );
 
-            // Then
             assertThat(response.accessToken()).isEqualTo("access-token");
             assertThat(response.refreshToken()).isEqualTo("refresh-token");
         }
@@ -165,13 +151,11 @@ class AuthServiceTest {
         @Test
         @DisplayName("Incorrect password - InvalidCredentialsException")
         void shouldThrowOnWrongPassword() {
-            // Given
             when(userService.findByEmail("test@mail.com"))
                     .thenReturn(testUser);
             when(passwordEncoder.matches("wrongPass", "hashedPass"))
                     .thenReturn(false);
 
-            // When & Then
             assertThatThrownBy(() ->
                     authService.login("test@mail.com", "wrongPass",
                             "127.0.0.1", "Device"))
@@ -185,11 +169,9 @@ class AuthServiceTest {
         @Test
         @DisplayName("User not found - UserNotFoundException")
         void shouldPropagateWhenUserNotFound() {
-            // Given
             when(userService.findByEmail("no@mail.com"))
                     .thenThrow(new UserNotFoundException("no@mail.com"));
 
-            // When & Then
             assertThatThrownBy(() ->
                     authService.login("no@mail.com", "pass",
                             "127.0.0.1", "Device"))
@@ -202,17 +184,14 @@ class AuthServiceTest {
         @Test
         @DisplayName("Creates refresh-token with correct ip and device")
         void shouldCreateRefreshTokenWithCorrectIpAndDevice() {
-            // Given
             when(userService.findByEmail(any())).thenReturn(testUser);
             when(passwordEncoder.matches(any(), any())).thenReturn(true);
             when(jwtService.generateToken(any())).thenReturn("token");
             when(refreshTokenService.createRefreshToken(any(), any(), any()))
                     .thenReturn("refresh");
 
-            // When
             authService.login("test@mail.com", "rawPass", "10.0.0.1", "Android");
 
-            // Then
             verify(refreshTokenService)
                     .createRefreshToken(1L, "10.0.0.1", "Android");
         }
