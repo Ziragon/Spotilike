@@ -38,6 +38,7 @@ boot-starter-flyway             = { module = "org.springframework.boot:spring-bo
 boot-starter-test               = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
 boot-webtestclient              = { module = "org.springframework.boot:spring-boot-webtestclient", version.ref = "springBoot" }
 boot-starter-webmvc-test        = { module = "org.springframework.boot:spring-boot-starter-webmvc-test", version.ref = "springBoot" }
+boot-testcontainers             = { module = "org.springframework.boot:spring-boot-testcontainers", version.ref = "springBoot" }
 
 # Spring Cloud Gateway
 cloud-dependencies              = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "springCloud" }
@@ -123,7 +124,8 @@ web = [
 
 test-infrastructure = [
     "testcontainers-postgresql",
-    "testcontainers-junit"
+    "testcontainers-junit",
+    "boot-testcontainers"
 ]
 
 test-web = [
